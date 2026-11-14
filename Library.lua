@@ -675,20 +675,136 @@ local Library do
         end
     end
 
-    do
-        -- Built-in font: no blocking font download on load.
-        Library.FontName = "GothamMedium"
-        local FontSuccess, BuiltinFont = pcall(function()
-            return Font.fromEnum(Enum.Font.GothamMedium)
-        end)
+    -- Custom fonts (lazy-loaded: only the selected font is downloaded)
+    Library.Fonts = { }
+    Library.FontName = "GothamMedium"
 
-        if not FontSuccess or not BuiltinFont then
-            FontSuccess, BuiltinFont = pcall(function()
-                return Font.fromEnum(Enum.Font.SourceSans)
-            end)
+    Library.FontList = {
+        ["Tahoma XP"] = {Id = "TahomaXP", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/windows-xp-tahoma.ttf"},
+        ["Tahoma Bold"] = {Id = "TahomaBold", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/tahomabd.ttf"},
+        ["Verdana"] = {Id = "Verdana", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/verdana.ttf"},
+        ["Inter"] = {Id = "Inter", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Inter.ttf"},
+        ["Inter Medium"] = {Id = "InterMedium", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/InterMedium.ttf"},
+        ["Poppins"] = {Id = "Poppins", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Poppins-Medium.ttf"},
+        ["Lato Bold"] = {Id = "LatoBold", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Lato-Bold.ttf"},
+        ["Monaco"] = {Id = "Monaco", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Monaco.ttf"},
+        ["Roboto Mono"] = {Id = "RobotoMono", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/RobotoMono-Regular.ttf"},
+        ["Lucida Console"] = {Id = "LucidaConsole", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/lucida-console.ttf"},
+        ["Minecraft"] = {Id = "Minecraft", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/MinecraftStandard.ttf"},
+        ["Minecraftia"] = {Id = "Minecraftia", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/minecraftia.ttf"},
+        ["Pixel Operator"] = {Id = "PixelOperator", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/PixelOperator.ttf"},
+        ["Smallest Pixel"] = {Id = "SmallestPixel", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/smallest_pixel-7.ttf"},
+        ["Proggy Clean"] = {Id = "ProggyClean", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/proggy-clean.ttf"},
+        ["Proggy Square"] = {Id = "ProggySquare", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/proggy-square.ttf"},
+        ["Proggy Tiny"] = {Id = "ProggyTiny", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/proggy-tiny.ttf"},
+        ["Cozette"] = {Id = "Cozette", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/cozette-vector.ttf"},
+        ["Basis33"] = {Id = "Basis33", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/basis33.ttf"},
+        ["NDS12"] = {Id = "NDS12", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/NDS12.ttf"},
+        ["Bubblegum Sans"] = {Id = "BubblegumSans", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Bubblegum-Sans.ttf"},
+        ["Figtree"] = {Id = "Figtree", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Figtree-Medium.ttf"},
+        ["Lexend"] = {Id = "Lexend", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Lexend-Medium.ttf"},
+        ["Outfit"] = {Id = "Outfit", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Outfit-Medium.ttf"},
+        ["Prompt"] = {Id = "Prompt", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Prompt-Regular.ttf"}
+    }
+
+    local function GetBuiltInFont(Name)
+        Name = Name or "GothamMedium"
+
+        local EnumFont = Enum.Font[Name]
+
+        if not EnumFont then
+            return nil
         end
 
-        Library.Font = BuiltinFont
+        local Success, NewFont = pcall(function()
+            return Font.fromEnum(EnumFont)
+        end)
+
+        return Success and NewFont or nil
+    end
+
+    Library.Font = GetBuiltInFont("GothamMedium") or GetBuiltInFont("SourceSans")
+
+    local CustomFont = { }
+    function CustomFont:Get(Name)
+        local Builtin = GetBuiltInFont(Name)
+
+        if Builtin then
+            return Builtin
+        end
+
+        local Data = Library.FontList[Name]
+
+        if not Data then
+            return nil
+        end
+
+        local TtfPath = Library.Folders.Assets .. "/" .. Data.Id .. ".ttf"
+        local JsonPath = Library.Folders.Assets .. "/" .. Data.Id .. ".json"
+
+        if not isfile(TtfPath) then
+            local Success, Bytes = pcall(function()
+                return game:HttpGet(Data.Url)
+            end)
+
+            if not Success or type(Bytes) ~= "string" or #Bytes == 0 then
+                return nil
+            end
+
+            if not pcall(writefile, TtfPath, Bytes) then
+                return nil
+            end
+        end
+
+        local Success, NewFont = pcall(function()
+            local FontData = {
+                name = Data.Id,
+                faces = { {
+                    name = "Regular",
+                    weight = 400,
+                    style = "Regular",
+                    assetId = getcustomasset(TtfPath)
+                } }
+            }
+
+            writefile(JsonPath, HttpService:JSONEncode(FontData))
+            return Font.new(getcustomasset(JsonPath))
+        end)
+
+        return Success and NewFont or nil
+    end
+
+    Library.SetFont = function(self, Name)
+        Name = tostring(Name or "")
+
+        local NewFont = self.Fonts[Name]
+
+        if not NewFont then
+            NewFont = CustomFont:Get(Name)
+        end
+
+        if not NewFont then
+            return false
+        end
+
+        self.Fonts[Name] = NewFont
+        self.Font = NewFont
+        self.FontName = Name
+        self.Flags["Font"] = Name
+
+        for _, Holder in { self.Holder, self.NotifHolder } do
+            if Holder and Holder.Instance then
+                for _, Item in Holder.Instance:GetDescendants() do
+                    if Item:IsA("TextLabel") or Item:IsA("TextButton") or Item:IsA("TextBox") then
+                        pcall(function()
+                            Item.FontFace = NewFont
+                        end)
+                    end
+                end
+            end
+        end
+
+        return true
     end
 
     Library.Holder = Instances:Create("ScreenGui", {
@@ -5393,6 +5509,54 @@ local Library do
             Callback = function(Value)
                 if Library.OnThreeDUI then
                     Library.OnThreeDUI(Value)
+                end
+            end,
+        })
+
+        local FontItems = { "GothamMedium" }
+        local SeenFonts = { ["GothamMedium"] = true }
+
+        local EnumOK, EnumFonts = pcall(function()
+            return Enum.Font:GetEnumItems()
+        end)
+
+        if EnumOK and EnumFonts then
+            for _, FontEnum in ipairs(EnumFonts) do
+                local FontName = FontEnum.Name
+
+                if FontName and not SeenFonts[FontName] then
+                    local ValidFont = pcall(function()
+                        return Font.fromEnum(FontEnum)
+                    end)
+
+                    if ValidFont then
+                        SeenFonts[FontName] = true
+                        TableInsert(FontItems, FontName)
+                    end
+                end
+            end
+        end
+
+        for FontName in Library.FontList do
+            if not SeenFonts[FontName] then
+                SeenFonts[FontName] = true
+                TableInsert(FontItems, FontName)
+            end
+        end
+
+        table.sort(FontItems)
+
+        MenuSection:Label("Font")
+
+        MenuSection:Listbox({
+            Name = "Font",
+            Flag = "Font",
+            Items = FontItems,
+            Size = 120,
+            Default = Library.FontName,
+            Callback = function(Value)
+                if not Library:SetFont(Value) then
+                    Library:Notification("Font", "Failed to load " .. tostring(Value), 4)
                 end
             end,
         })
