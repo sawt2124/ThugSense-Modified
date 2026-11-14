@@ -209,7 +209,7 @@ local Library do
             ["Placeholder Text"] = FromRGB(150, 150, 155)
         },
 
-        MenuKeybind = Enum.KeyCode.Z, 
+        MenuKeybind = Enum.KeyCode.RightControl, 
 
         FontName = "Default",
         FadeSpeed = 0.3,
@@ -763,7 +763,7 @@ local Library do
             [Property] = Visibility and OldTransparency or 1
         }, true)
 
-        Library:Connect(NewTween.Tween.Completed, function()
+        NewTween.Tween.Completed:Once(function()
             if not Visibility then 
                 task.wait()
                 Item[Property] = OldTransparency
@@ -1238,7 +1238,7 @@ local Library do
     end
 
     Library.KeybindList = function(self)
-        local KeybindList = { }
+        local KeybindList = { Enabled = false }
         self.KeyList = KeybindList
 
         local Items = { } do
@@ -1248,9 +1248,9 @@ local Library do
                 AnchorPoint = Vector2New(0, 0.5),
                 Name = "\0",
                 Position = UDim2New(0, 15, 0.5, 0),
-                Size = UDim2New(0, 0, 0, 18),
+                Size = UDim2New(0, 200, 0, 18),
                 BorderSizePixel = 2,
-                AutomaticSize = Enum.AutomaticSize.XY,
+                AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundColor3 = FromRGB(15, 15, 20)
             })  Items["KeybindList"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
 
@@ -1295,7 +1295,7 @@ local Library do
                 BorderColor3 = FromRGB(0, 0, 0),
                 Text = "Keybinds",
                 Name = "\0",
-                Size = UDim2New(0, 100, 0, 15),
+                Size = UDim2New(1, 0, 0, 15),
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Position = UDim2New(0, 0, 0, -1),
@@ -1317,7 +1317,8 @@ local Library do
                 Position = UDim2New(0, 5, 0, 19),
                 BorderColor3 = FromRGB(0, 0, 0),
                 BorderSizePixel = 0,
-                AutomaticSize = Enum.AutomaticSize.XY,
+                Size = UDim2New(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
             
@@ -1334,14 +1335,14 @@ local Library do
                 FontFace = Library.Font,
                 TextColor3 = FromRGB(215, 215, 215),
                 BorderColor3 = FromRGB(0, 0, 0),
-                Text = "(" .. Mode .. ") " .. Name .. " - " .. Key,
+                Text = "[" .. Key .. "] " .. Name,
                 Name = "\0",
-                Size = UDim2New(0, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 15),
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd,
                 BorderSizePixel = 0,
-                AutomaticSize = Enum.AutomaticSize.X,
-                TextSize = 12,
+                TextSize = 11,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  NewKey:AddToTheme({TextColor3 = "Text"})
             
@@ -1352,7 +1353,7 @@ local Library do
             }):AddToTheme({Color = "Text Border"})
         
             function NewKey:Set(Mode, Name, Key)
-                NewKey.Instance.Text = "(" .. Mode .. ") " .. Name .. " - " .. Key
+                NewKey.Instance.Text = "[" .. Key .. "] " .. Name
             end
 
             function NewKey:SetStatus(Status)
@@ -1365,12 +1366,36 @@ local Library do
                 end
             end
 
+            function NewKey:SetVisible(Bool)
+                NewKey.Instance.Visible = Bool
+
+                if not Bool then
+                    NewKey.Instance.Text = ""
+                end
+            end
+
             return NewKey
         end
 
-        function KeybindList:SetVisibility(Bool)
-            Items["KeybindList"].Instance.Visible = Bool
+        function KeybindList:Refresh()
+            local AnyVisible = false
+
+            for _, Child in Items["Content"].Instance:GetChildren() do
+                if Child:IsA("TextLabel") and Child.Visible then
+                    AnyVisible = true
+                    break
+                end
+            end
+
+            Items["KeybindList"].Instance.Visible = (KeybindList.Enabled ~= false) and AnyVisible
         end
+
+        function KeybindList:SetVisibility(Bool)
+            KeybindList.Enabled = Bool
+            KeybindList:Refresh()
+        end
+
+        Items["KeybindList"].Instance.Visible = false
 
         KeybindList.Elements = Items
         Library.KeybindListObj = KeybindList
@@ -1733,7 +1758,7 @@ local Library do
                 end
             end
 
-            Library:Connect(NewTween.Tween.Completed, function()
+            NewTween.Tween.Completed:Once(function()
                 Debounce = false
                 Items["ColorpickerWindow"].Instance.Visible = Bool
             end)
@@ -1948,7 +1973,7 @@ local Library do
         }
 
         local function IsBoundKey(Key)
-            return type(Key) == "string" and Key ~= "" and Key ~= "None" and Key ~= "nil"
+            return type(Key) == "string" and Key ~= "" and Key ~= "None" and Key ~= "nil" and Key ~= "Enum.KeyCode.None"
         end
 
         Library.Flags[Data.Flag] = { Mode = "Toggle", Toggled = false }
@@ -2111,8 +2136,18 @@ local Library do
 
         local Update = function()
             if KeyListItem then
-                KeyListItem:Set(Keybind.Mode, Data.Name, Keybind.Value)
-                KeyListItem:SetStatus(Keybind.Toggled and "Active" or "Inactive")
+                local Bound = IsBoundKey(Keybind.Key)
+
+                KeyListItem:SetVisible(Bound)
+
+                if Bound then
+                    KeyListItem:Set(Keybind.Mode, Data.Name, Keybind.Value)
+                    KeyListItem:SetStatus(Keybind.Toggled and "Active" or "Inactive")
+                end
+
+                if Library.KeyList and Library.KeyList.Refresh then
+                    Library.KeyList:Refresh()
+                end
             end
         end
 
@@ -2206,7 +2241,7 @@ local Library do
 
                 local RawKey = Key.Key
 
-                if RawKey == nil or RawKey == "" or RawKey == "None" or RawKey == "nil" or RawKey == "MB1" or RawKey == "MB2" or tostring(RawKey) == "Enum.KeyCode.Backspace" then
+                if RawKey == nil or RawKey == "" or RawKey == "None" or RawKey == "nil" or RawKey == "MB1" or RawKey == "MB2" or tostring(RawKey) == "Enum.KeyCode.Backspace" or tostring(RawKey) == "Enum.KeyCode.None" then
                     Keybind:Unbind()
                     return
                 end
@@ -2230,14 +2265,14 @@ local Library do
                     return
                 end
 
-                if Key == "" or Key == "None" or Key == "nil" or Key == "MB1" or Key == "MB2" or Key == "Enum.KeyCode.Backspace" or StringFind(Key, "UserInputType.") then
+                if Key == "" or Key == "None" or Key == "nil" or Key == "MB1" or Key == "MB2" or Key == "Enum.KeyCode.Backspace" or Key == "Enum.KeyCode.None" or StringFind(Key, "UserInputType.") then
                     Keybind:Unbind()
                     return
                 end
             end
 
             if IsEnum then
-                if Key.EnumType == Enum.KeyCode and Key.Name == "Backspace" then
+                if Key.EnumType == Enum.KeyCode and (Key.Name == "Backspace" or Key.Name == "None") then
                     Keybind:Unbind()
                     return
                 end
@@ -2426,6 +2461,8 @@ local Library do
             Keybind:Set(Value)
         end
 
+        Update()
+
         return Keybind
     end
 
@@ -2551,46 +2588,12 @@ local Library do
         local Debounce = false
 
         function Window:SetOpen(Bool)
-            if Debounce then 
-                return 
-            end
-
             Window.IsOpen = Bool
-
-            Debounce = true 
-
-            if Bool then 
-                Items["MainFrame"].Instance.Visible = true
-            end
-
-            local Descendants = Items["MainFrame"].Instance:GetDescendants()
-            TableInsert(Descendants, Items["MainFrame"].Instance)
-
-            local NewTween
-            for Index, Value in Descendants do 
-                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-
-                if not ValueIndex then 
-                    continue
-                end
-
-                if type(ValueIndex) == "table" then
-                    for _, Property in ValueIndex do 
-                        NewTween = Library:FadeItem(Value, Property, Bool, Window.FadeSpeed)
-                    end
-                else
-                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Window.FadeSpeed)
-                end
-            end
-
-            Library:Connect(NewTween.Tween.Completed, function()
-                Debounce = false
-                Items["MainFrame"].Instance.Visible = Bool
-            end)
+            Items["MainFrame"].Instance.Visible = Bool
         end
 
         Library:Connect(UserInputService.InputBegan, function(Input)
-            if tostring(Input.KeyCode) == Library.MenuKeybind or tostring(Input.UserInputType) == Library.MenuKeybind then
+            if tostring(Input.KeyCode) == tostring(Library.MenuKeybind) or tostring(Input.UserInputType) == tostring(Library.MenuKeybind) then
                 Window:SetOpen(not Window.IsOpen)
             end
         end)
@@ -2794,52 +2797,19 @@ local Library do
         local Debounce = false
 
         function Page:Turn(Bool)
-            if Debounce then 
-                return 
-            end
-
             Page.Active = Bool
+            Items["Page"].Instance.Visible = Bool
+            Items["Hide"].Instance.Visible = Bool
 
-            Debounce = true 
-
-            if Bool then 
-                Items["Page"].Instance.Visible = true
-
-                Items["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
-                Items["Hide"].Instance.Visible = true
-
+            if Bool then
                 Items["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
+                Items["Text"].Instance.TextColor3 = Library.Theme.Accent
+                Items["Text"].Instance.TextTransparency = 0
             else
-                Items["Text"]:Tween(nil, {TextColor3 = Library.Theme.Text, TextTransparency = 0.5})
-                Items["Hide"].Instance.Visible = false
-
                 Items["Text"]:ChangeItemTheme({TextColor3 = "Text"})
+                Items["Text"].Instance.TextColor3 = Library.Theme.Text
+                Items["Text"].Instance.TextTransparency = 0.5
             end
-
-            local Descendants = Items["Page"].Instance:GetDescendants()
-            TableInsert(Descendants, Items["Page"].Instance)
-
-            local NewTween
-            for Index, Value in Descendants do 
-                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-
-                if not ValueIndex then 
-                    continue
-                end
-
-                if type(ValueIndex) == "table" then
-                    for _, Property in ValueIndex do 
-                        NewTween = Library:FadeItem(Value, Property, Bool, Page.Window.FadeSpeed or 0.5)
-                    end
-                else
-                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Page.Window.FadeSpeed or 0.5)
-                end
-            end
-
-            Library:Connect(NewTween.Tween.Completed, function()
-                Debounce = false
-                Items["Page"].Instance.Visible = Bool
-            end)
         end
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
@@ -3043,64 +3013,20 @@ local Library do
         local Debounce = false
 
         function SubPage:Turn(Bool)
-            if Debounce then 
-                return 
-            end
-
             SubPage.Active = Bool
+            Items["Subtab"].Instance.Visible = Bool
+            Items["Hide"].Instance.Visible = Bool
+            Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, Bool and 1 or -2)
 
-            Debounce = true 
-
-            if Bool then 
-                Items["Subtab"].Instance.Visible = true
-
-                if SubPage.Icon then
-                    Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
-                    Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
-                else
-                    Items["Icon"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
-                    Items["Icon"]:ChangeItemTheme({TextColor3 = "Accent"})
-                end
-                Items["Hide"].Instance.Visible = true
-
-                Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, 1)
+            if SubPage.Icon then
+                Items["Icon"]:ChangeItemTheme({ImageColor3 = Bool and "Accent" or "Text"})
+                Items["Icon"].Instance.ImageColor3 = Bool and Library.Theme.Accent or Library.Theme.Text
+                Items["Icon"].Instance.ImageTransparency = Bool and 0 or 0.35
             else
-                if SubPage.Icon then
-                    Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Text, ImageTransparency = 0.35})
-                    Items["Icon"]:ChangeItemTheme({ImageColor3 = "Text"})
-                else
-                    Items["Icon"]:Tween(nil, {TextColor3 = Library.Theme.Text, TextTransparency = 0.35})
-                    Items["Icon"]:ChangeItemTheme({TextColor3 = "Text"})
-                end
-                Items["Hide"].Instance.Visible = false
-
-                Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, -2)
+                Items["Icon"]:ChangeItemTheme({TextColor3 = Bool and "Accent" or "Text"})
+                Items["Icon"].Instance.TextColor3 = Bool and Library.Theme.Accent or Library.Theme.Text
+                Items["Icon"].Instance.TextTransparency = Bool and 0 or 0.35
             end
-
-            local Descendants = Items["Subtab"].Instance:GetDescendants()
-            TableInsert(Descendants, Items["Subtab"].Instance)
-
-            local NewTween
-            for Index, Value in Descendants do 
-                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-
-                if not ValueIndex then 
-                    continue
-                end
-
-                if type(ValueIndex) == "table" then
-                    for _, Property in ValueIndex do 
-                        NewTween = Library:FadeItem(Value, Property, Bool, SubPage.Window.FadeSpeed or 0.5)
-                    end
-                else
-                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, SubPage.Window.FadeSpeed or 0.5)
-                end
-            end
-
-            Library:Connect(NewTween.Tween.Completed, function()
-                Debounce = false
-                Items["Subtab"].Instance.Visible = Bool
-            end)
         end
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
@@ -3469,7 +3395,7 @@ local Library do
                     end
                 end
 
-                Library:Connect(NewTween.Tween.Completed, function()
+                NewTween.Tween.Completed:Once(function()
                     Debounce = false
                     SubItems["Content"].Instance.Visible = Bool
                 end)
@@ -4570,7 +4496,7 @@ local Library do
                 end
             end
 
-            Library:Connect(NewTween.Tween.Completed, function()
+            NewTween.Tween.Completed:Once(function()
                 Debounce = false
                 Items["OptionHolder"].Instance.Visible = Bool
                 Items["OptionHolder"].Instance.ZIndex = Bool and 15 or 1
@@ -5440,7 +5366,7 @@ local Library do
         MenuSection:Toggle({
             Name = "Keybind List",
             Flag = "KeybindList",
-            Default = true,
+            Default = false,
             Callback = function(Value)
                 if KeybindList then
                     KeybindList:SetVisibility(Value)
