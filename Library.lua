@@ -4232,6 +4232,47 @@ local Library do
             Class = "Dropdown",
         }
 
+        local WindowItems = Dropdown.Window and Dropdown.Window.Elements
+        local MainFrame = WindowItems and WindowItems["MainFrame"]
+        local DropdownLayer = WindowItems and WindowItems["DropdownLayer"]
+
+        if MainFrame and not DropdownLayer then
+            DropdownLayer = Instances:Create("Frame", {
+                Parent = MainFrame.Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                Position = UDim2New(0, 0, 0, 0),
+                Size = UDim2New(1, 0, 1, 0),
+                BorderSizePixel = 0,
+                BackgroundColor3 = FromRGB(255, 255, 255),
+                ClipsDescendants = false,
+                Active = false,
+                ZIndex = 10000
+            })
+
+            MainFrame.Instance.ClipsDescendants = false
+            WindowItems["DropdownLayer"] = DropdownLayer
+        end
+
+        if not DropdownLayer then
+            DropdownLayer = Instances:Create("Frame", {
+                Parent = Library.Holder.Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                Position = UDim2New(0, 0, 0, 0),
+                Size = UDim2New(1, 0, 1, 0),
+                BorderSizePixel = 0,
+                BackgroundColor3 = FromRGB(255, 255, 255),
+                ClipsDescendants = false,
+                Active = false,
+                ZIndex = 10000
+            })
+
+            if WindowItems then
+                WindowItems["DropdownLayer"] = DropdownLayer
+            end
+        end
+
         local Items = { } do
             Items["Dropdown"] = Instances:Create("Frame", {
                 Parent = Dropdown.Section.Elements["Content"].Instance,
@@ -4335,17 +4376,28 @@ local Library do
                 Name = "\0"
             }):AddToTheme({Color = "Text Border"})
             
-            Items["OptionHolder"] = Instances:Create("Frame", {
-                Parent = Items["Dropdown"].Instance,
+            Items["OptionHolder"] = Instances:Create("ScrollingFrame", {
+                Parent = DropdownLayer.Instance,
                 Visible = false,
                 BorderColor3 = FromRGB(10, 10, 10),
                 Name = "\0",
-                Position = UDim2New(0, 0, 1, 5),
+                Position = UDim2New(0, 0, 0, 0),
                 Size = UDim2New(1, 0, 0, 0),
                 BorderSizePixel = 2,
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundColor3 = FromRGB(20, 20, 25)
-            })  Items["OptionHolder"]:AddToTheme({BackgroundColor3 = "Inline", BorderColor3 = "Border"})
+                BackgroundColor3 = FromRGB(20, 20, 25),
+                ClipsDescendants = true,
+                Active = true,
+                ScrollingEnabled = true,
+                ScrollingDirection = Enum.ScrollingDirection.Y,
+                ScrollBarThickness = 4,
+                ScrollBarImageColor3 = Library.Theme.Accent,
+                MidImage = Library:GetImage("Scrollbar"),
+                TopImage = Library:GetImage("Scrollbar"),
+                BottomImage = Library:GetImage("Scrollbar"),
+                AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                CanvasSize = UDim2New(0, 0, 0, 0),
+                ZIndex = 10001
+            })  Items["OptionHolder"]:AddToTheme({BackgroundColor3 = "Inline", BorderColor3 = "Border", ScrollBarImageColor3 = "Accent"})
             
             Instances:Create("UIStroke", {
                 Parent = Items["OptionHolder"].Instance,
@@ -4362,7 +4414,8 @@ local Library do
             
             Instances:Create("UIPadding", {
                 Parent = Items["OptionHolder"].Instance,
-                PaddingBottom = UDimNew(0, 2)
+                PaddingBottom = UDimNew(0, 2),
+                PaddingRight = UDimNew(0, 4)
             })
 
             Items["RealDropdown"]:OnHover(function()
@@ -4374,6 +4427,72 @@ local Library do
                 Items["RealDropdown"]:Tween(nil, {BackgroundColor3 = Library.Theme["Background"]})
                 Items["RealDropdown"]:ChangeItemTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
             end)
+        end
+
+        local DropdownPositionConnection = nil
+        local DropdownOpenToken = 0
+
+        local function UpdateDropdownPosition()
+            local Holder = Items["OptionHolder"].Instance
+            local Row = Items["Dropdown"].Instance
+            local Parent = Holder and Holder.Parent
+
+            if not (Holder and Row and Parent) then
+                return
+            end
+
+            if Dropdown.Window and Dropdown.Window.IsOpen == false then
+                return
+            end
+
+            local Viewport = (Workspace.CurrentCamera and Workspace.CurrentCamera.ViewportSize) or Camera.ViewportSize
+            local RowPosition = Row.AbsolutePosition
+            local RowSize = Row.AbsoluteSize
+
+            if RowSize.X <= 0 then
+                return
+            end
+
+            local ParentPosition = Parent.AbsolutePosition
+            local Count = 0
+
+            for _ in pairs(Dropdown.Options) do
+                Count += 1
+            end
+
+            local FullHeight = Holder.AbsoluteCanvasSize.Y
+
+            if FullHeight <= 1 then
+                FullHeight = Count * 15 + 4
+            end
+
+            FullHeight = math.max(15, FullHeight)
+
+            local Gap = 5
+            local BelowY = RowPosition.Y + RowSize.Y + Gap
+            local AboveY = RowPosition.Y - Gap
+            local SpaceBelow = math.max(0, Viewport.Y - BelowY - 8)
+            local SpaceAbove = math.max(0, AboveY - 8)
+            local ShownHeight, Y
+
+            if FullHeight <= SpaceBelow then
+                ShownHeight = FullHeight
+                Y = BelowY
+            elseif FullHeight <= SpaceAbove then
+                ShownHeight = FullHeight
+                Y = AboveY - FullHeight
+            elseif SpaceBelow >= SpaceAbove then
+                ShownHeight = math.max(30, SpaceBelow)
+                Y = BelowY
+            else
+                ShownHeight = math.max(30, SpaceAbove)
+                Y = AboveY - ShownHeight
+            end
+
+            local Width = math.max(80, RowSize.X)
+
+            Holder.Position = UDim2New(0, RowPosition.X - ParentPosition.X, 0, Y - ParentPosition.Y)
+            Holder.Size = UDim2New(0, Width, 0, ShownHeight)
         end
 
         function Dropdown:Set(Option)
@@ -4447,7 +4566,7 @@ local Library do
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 Size = UDim2New(1, 0, 0, 15),
-                ZIndex = 5,
+                ZIndex = 10002,
                 TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
@@ -4465,7 +4584,7 @@ local Library do
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 BorderSizePixel = 0,
-                ZIndex = 5,
+                ZIndex = 10003,
                 TextSize = 12,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
@@ -4574,15 +4693,29 @@ local Library do
                 return 
             end
 
-            Dropdown.IsOpen = Bool
+            DropdownOpenToken += 1
+            local Token = DropdownOpenToken
 
+            Dropdown.IsOpen = Bool
             Debounce = true 
+
+            if DropdownPositionConnection then
+                DropdownPositionConnection.Connection:Disconnect()
+                DropdownPositionConnection = nil
+            end
 
             if Bool then 
                 Items["OptionHolder"].Instance.Visible = true
-                Items["OptionHolder"].Instance.ZIndex = 15
+                Items["OptionHolder"].Instance.ZIndex = 10001
                 Items["Open"].Instance.Text = "-"
                 Items["Open"].Instance.Position = UDim2New(0, -5, 0, -1)
+                UpdateDropdownPosition()
+
+                DropdownPositionConnection = Library:Connect(RunService.RenderStepped, function()
+                    if Dropdown.IsOpen then
+                        UpdateDropdownPosition()
+                    end
+                end)
             else
                 Items["Open"].Instance.Text = "+"
                 Items["Open"].Instance.Position = UDim2New(0, -4, 0, -1)
@@ -4592,6 +4725,8 @@ local Library do
             TableInsert(Descendants, Items["OptionHolder"].Instance)
 
             local NewTween
+            local FadeSpeed = (Dropdown.Window and Dropdown.Window.FadeSpeed) or 0.25
+
             for Index, Value in Descendants do 
                 local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
 
@@ -4599,24 +4734,30 @@ local Library do
                     continue
                 end
 
-                if not StringFind(Value.ClassName, "UI") then 
-                    Value.ZIndex = Bool and 15 or 1
-                end
-
                 if type(ValueIndex) == "table" then
                     for _, Property in ValueIndex do 
-                        NewTween = Library:FadeItem(Value, Property, Bool, Dropdown.Window.FadeSpeed)
+                        NewTween = Library:FadeItem(Value, Property, Bool, FadeSpeed)
                     end
                 else
-                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Dropdown.Window.FadeSpeed)
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, FadeSpeed)
                 end
             end
 
-            NewTween.Tween.Completed:Once(function()
+            local function Finish()
+                if Token ~= DropdownOpenToken then
+                    return
+                end
+
                 Debounce = false
                 Items["OptionHolder"].Instance.Visible = Bool
-                Items["OptionHolder"].Instance.ZIndex = Bool and 15 or 1
-            end)
+                Items["OptionHolder"].Instance.ZIndex = 10001
+            end
+
+            if NewTween and NewTween.Tween then
+                NewTween.Tween.Completed:Once(Finish)
+            else
+                Finish()
+            end
         end
 
         for Index, Value in Dropdown.Items do 
