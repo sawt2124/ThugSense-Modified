@@ -550,7 +550,7 @@ local Library do
 
     
     Library.Fonts = { }
-    Library.FontName = "Bodoni"
+    Library.FontName = "GothamMedium"
 
     Library.FontList = {
         ["Tahoma XP"] = {Id = "TahomaXP", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/windows-xp-tahoma.ttf"},
@@ -583,9 +583,11 @@ local Library do
     local function GetBuiltInFont(Name)
         Name = Name or "GothamMedium"
 
-        local EnumFont = Enum.Font[Name]
+        local ok, EnumFont = pcall(function()
+            return Enum.Font[Name]
+        end)
 
-        if not EnumFont then
+        if not ok or typeof(EnumFont) ~= "EnumItem" then
             return nil
         end
 
@@ -596,7 +598,7 @@ local Library do
         return Success and NewFont or nil
     end
 
-    Library.Font = GetBuiltInFont("Bodoni") or GetBuiltInFont("GothamMedium") or GetBuiltInFont("SourceSans")
+    Library.Font = GetBuiltInFont("GothamMedium") or GetBuiltInFont("SourceSans")
 
     local CustomFont = { }
     function CustomFont:Get(Name)
@@ -7523,7 +7525,7 @@ local Library do
                 TextStrokeTransparency = isMiddle and 0.25 or 0.55,
                 TextXAlignment = Enum.TextXAlignment.Center,
                 TextYAlignment = Enum.TextYAlignment.Center,
-            })  SkyLabels[i]:AddToTheme({ TextColor3 = "Text", TextStrokeColor3 = "Text Stroke" })
+            })  SkyLabels[i]:AddToTheme({ TextColor3 = "Text", TextStrokeColor3 = "Text Border" })
         end
 
         
