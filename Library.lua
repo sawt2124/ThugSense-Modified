@@ -1,143 +1,4 @@
--- Thugsense
---[[
-    Made by samet
 
-    Assign different flags to each element to prevent from configs overriding eachother
-    Example script is at the bottom
-
-    Documentation:
-    function Library:Window(Data: table
-        Name/name: string,
-        Size/size: UDim2
-    )
-
-    function Window:Page(Data: table
-        Name/name: string,
-        Columns/columns: number,
-        SubTabs/subtabs: boolean
-    )
-
-    function Page:SubPage(Data: table
-        Icon/icon: string,
-        Columns/columns: number
-    )
-
-    function Page:Section(Data: table
-        Name/name: string,
-        Side/side: number,
-    )
-
-    function Page:MultiSection(Data: table
-        Sections/sections: table,
-        Side/side: number
-    )
-
-    function Page:ScrollableSection(Data: table
-        Name/name: string,
-        Side/side: number,
-        Size/size: number
-    )
-
-    function Section:Divider()
-
-    function Section:Label(Data: table
-        Name/name: string,
-        Alignment/alignment: string
-    )
-
-    function Section:Toggle(Data: table
-        Name/name: string,
-        Default/default: boolean,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Section:Button(Data: table
-        Name/name: string,
-        Callback/callback: function
-    )
-
-    function Section:Slider(Data: table
-        Name/name: string,
-        Min/min: number,
-        Max/max: number,
-        Decimals/decimals: number,
-        Default/default: number,
-        Suffix/suffix: string,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Section:Textbox(Data: table
-        Name/name: string,
-        Default/default: string,
-        Placeholder/placeholder: string,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Section:Dropdown(Data: table
-        Name/name: string,
-        Items/items: table,
-        Default/default: string,
-        Flag/flag: string,
-        Multi/multi: boolean,
-        Callback/callback: function
-    )
-
-    function Section:Listbox(Data: table
-        Size/size: number,
-        Items/items: table,
-        Default/default: string,
-        Multi/multi: boolean,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Label:Keybind(Data: table
-        Name/name: string,
-        Mode/mode: string,
-        Default/default: EnumItem,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Label:Colorpicker(Data: table
-        Name/name: string,
-        Default/default: Color3,
-        Alpha/alpha: boolean,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Toggle:Colorpicker(Data: table
-        Name/name: string,
-        Default/default: Color3,
-        Alpha/alpha: boolean,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Toggle:Keybind(Data: table
-        Name/name: string,
-        Mode/mode: string,
-        Default/default: EnumItem,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Sections:Textbox(Data: table
-        Name/name: string,
-        Default/default: string,
-        Placeholder/placeholder: string,
-        Flag/flag: string,
-        Callback/callback: function
-    )
-
-    function Library:Watermark(Name: string)
-    function Library:Notification(Text: string, Duration: number, Color: Color3, Icon: table)
-    function Library:KeybindList()
-]]
 
 local LoadingTick = os.clock()
 
@@ -227,7 +88,7 @@ local Library do
             Themes = "FunctionMeta/Themes"
         },
 
-        Images = { -- you're welcome to reupload the images and replace it with your own links
+        Images = { 
             ["Saturation"] = {"Saturation.png", "https://github.com/sametexe001/images/blob/main/saturation.png?raw=true" },
             ["Value"] = { "Value.png", "https://github.com/sametexe001/images/blob/main/value.png?raw=true" },
             ["Hue"] = { "Hue.png", "https://github.com/sametexe001/images/blob/main/hue.png?raw=true" },
@@ -236,7 +97,7 @@ local Library do
             ["Resize"] = { "Resize.png", "https://github.com/sametexe001/images/blob/main/resize.png?raw=true" },
         },
 
-        -- Ignore below
+        
         Pages = { },
         Sections = { },
         Connections = { },
@@ -245,6 +106,7 @@ local Library do
         ThemeItems = { },
 
         SetFlags = { },
+        OpenDropdowns = { },
 
         UnnamedConnections = 0,
         UnnamedFlags = 0,
@@ -260,6 +122,17 @@ local Library do
     Library.__index = Library
     Library.Sections.__index = Library.Sections
     Library.Pages.__index = Library.Pages
+
+    
+    
+    function Library:CloseDropdowns()
+        for Dropdown in pairs(self.OpenDropdowns) do
+            if Dropdown.SetOpen and Dropdown.IsOpen then
+                Dropdown:SetOpen(false)
+            end
+        end
+        self.OpenDropdowns = { }
+    end
 
     local Keys = {
         ["Unknown"]           = "Unknown",
@@ -335,7 +208,7 @@ local Library do
         ["RightAlt"]          = "RightAlt"
     }
 
-    -- Files 
+    
     for _, FileName in Library.Folders do
         if not isfolder(FileName) then
             makefolder(FileName)
@@ -675,36 +548,36 @@ local Library do
         end
     end
 
-    -- Custom fonts (lazy-loaded: only the selected font is downloaded)
+    
     Library.Fonts = { }
-    Library.FontName = "GothamMedium"
+    Library.FontName = "Bodoni"
 
     Library.FontList = {
-        ["Tahoma XP"] = {Id = "TahomaXP", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/windows-xp-tahoma.ttf"},
-        ["Tahoma Bold"] = {Id = "TahomaBold", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/tahomabd.ttf"},
-        ["Verdana"] = {Id = "Verdana", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/verdana.ttf"},
-        ["Inter"] = {Id = "Inter", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Inter.ttf"},
-        ["Inter Medium"] = {Id = "InterMedium", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/InterMedium.ttf"},
-        ["Poppins"] = {Id = "Poppins", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Poppins-Medium.ttf"},
-        ["Lato Bold"] = {Id = "LatoBold", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Lato-Bold.ttf"},
-        ["Monaco"] = {Id = "Monaco", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Monaco.ttf"},
-        ["Roboto Mono"] = {Id = "RobotoMono", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/RobotoMono-Regular.ttf"},
-        ["Lucida Console"] = {Id = "LucidaConsole", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/lucida-console.ttf"},
-        ["Minecraft"] = {Id = "Minecraft", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/MinecraftStandard.ttf"},
-        ["Minecraftia"] = {Id = "Minecraftia", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/minecraftia.ttf"},
-        ["Pixel Operator"] = {Id = "PixelOperator", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/PixelOperator.ttf"},
-        ["Smallest Pixel"] = {Id = "SmallestPixel", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/smallest_pixel-7.ttf"},
-        ["Proggy Clean"] = {Id = "ProggyClean", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/proggy-clean.ttf"},
-        ["Proggy Square"] = {Id = "ProggySquare", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/proggy-square.ttf"},
-        ["Proggy Tiny"] = {Id = "ProggyTiny", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/proggy-tiny.ttf"},
-        ["Cozette"] = {Id = "Cozette", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/cozette-vector.ttf"},
-        ["Basis33"] = {Id = "Basis33", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/basis33.ttf"},
-        ["NDS12"] = {Id = "NDS12", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/NDS12.ttf"},
-        ["Bubblegum Sans"] = {Id = "BubblegumSans", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Bubblegum-Sans.ttf"},
-        ["Figtree"] = {Id = "Figtree", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Figtree-Medium.ttf"},
-        ["Lexend"] = {Id = "Lexend", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Lexend-Medium.ttf"},
-        ["Outfit"] = {Id = "Outfit", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Outfit-Medium.ttf"},
-        ["Prompt"] = {Id = "Prompt", Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Prompt-Regular.ttf"}
+        ["Tahoma XP"] = {Id = "TahomaXP", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/windows-xp-tahoma.ttf"},
+        ["Tahoma Bold"] = {Id = "TahomaBold", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/tahomabd.ttf"},
+        ["Verdana"] = {Id = "Verdana", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/verdana.ttf"},
+        ["Inter"] = {Id = "Inter", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Inter.ttf"},
+        ["Inter Medium"] = {Id = "InterMedium", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/InterMedium.ttf"},
+        ["Poppins"] = {Id = "Poppins", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Poppins-Medium.ttf"},
+        ["Lato Bold"] = {Id = "LatoBold", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Lato-Bold.ttf"},
+        ["Monaco"] = {Id = "Monaco", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Monaco.ttf"},
+        ["Roboto Mono"] = {Id = "RobotoMono", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/RobotoMono-Regular.ttf"},
+        ["Lucida Console"] = {Id = "LucidaConsole", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/lucida-console.ttf"},
+        ["Minecraft"] = {Id = "Minecraft", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/MinecraftStandard.ttf"},
+        ["Minecraftia"] = {Id = "Minecraftia", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/minecraftia.ttf"},
+        ["Pixel Operator"] = {Id = "PixelOperator", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/PixelOperator.ttf"},
+        ["Smallest Pixel"] = {Id = "SmallestPixel", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/smallest_pixel-7.ttf"},
+        ["Proggy Clean"] = {Id = "ProggyClean", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/proggy-clean.ttf"},
+        ["Proggy Square"] = {Id = "ProggySquare", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/proggy-square.ttf"},
+        ["Proggy Tiny"] = {Id = "ProggyTiny", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/proggy-tiny.ttf"},
+        ["Cozette"] = {Id = "Cozette", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/cozette-vector.ttf"},
+        ["Basis33"] = {Id = "Basis33", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/basis33.ttf"},
+        ["NDS12"] = {Id = "NDS12", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/NDS12.ttf"},
+        ["Bubblegum Sans"] = {Id = "BubblegumSans", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Bubblegum-Sans.ttf"},
+        ["Figtree"] = {Id = "Figtree", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Figtree-Medium.ttf"},
+        ["Lexend"] = {Id = "Lexend", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Lexend-Medium.ttf"},
+        ["Outfit"] = {Id = "Outfit", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Outfit-Medium.ttf"},
+        ["Prompt"] = {Id = "Prompt", Url = "https://raw.githubusercontent.com/sametexe001/luas/refs/heads/main/fonts/Prompt-Regular.ttf"}
     }
 
     local function GetBuiltInFont(Name)
@@ -723,7 +596,7 @@ local Library do
         return Success and NewFont or nil
     end
 
-    Library.Font = GetBuiltInFont("GothamMedium") or GetBuiltInFont("SourceSans")
+    Library.Font = GetBuiltInFont("Bodoni") or GetBuiltInFont("GothamMedium") or GetBuiltInFont("SourceSans")
 
     local CustomFont = { }
     function CustomFont:Get(Name)
@@ -978,6 +851,29 @@ local Library do
         self.ThemeMap[Item] = ThemeData
     end
 
+    
+    Library.SetAccent = function(self, Color)
+        if typeof(Color) ~= "Color3" then
+            return
+        end
+
+        self.Theme.Accent = Color
+
+        for _, ThemeData in ipairs(self.ThemeItems) do
+            local Item = ThemeData.Item
+
+            if Item and Item.Parent then
+                for Property, Key in pairs(ThemeData.Properties) do
+                    if Key == "Accent" then
+                        pcall(function()
+                            Item[Property] = Color
+                        end)
+                    end
+                end
+            end
+        end
+    end
+
     Library.GetConfig = function(self)
         local Config = { } 
 
@@ -1144,12 +1040,12 @@ local Library do
                 BorderColor3 = FromRGB(0, 0, 0),
                 Text = Name,
                 Name = "\0",
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 BackgroundTransparency = 1,
                 Position = UDim2New(0, 0, 0, 1),
                 BorderSizePixel = 0,
                 AutomaticSize = Enum.AutomaticSize.X,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
             
@@ -1191,7 +1087,7 @@ local Library do
     end
 
     Library.Notification = function(self, Text, Duration, Color, Icon)
-        -- Scoot-style compatibility: Notification(title, description, duration)
+        
         if type(Duration) ~= "number" then
             local Title = tostring(Text or "")
             local Description = tostring(Duration or "")
@@ -1245,12 +1141,12 @@ local Library do
                 BorderColor3 = FromRGB(0, 0, 0),
                 Text = Text,
                 Name = "\0",
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 BackgroundTransparency = 1,
                 Position = UDim2New(0, 13, 0, 2),
                 BorderSizePixel = 0,
                 AutomaticSize = Enum.AutomaticSize.X,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
             
@@ -1411,12 +1307,12 @@ local Library do
                 BorderColor3 = FromRGB(0, 0, 0),
                 Text = "Keybinds",
                 Name = "\0",
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Position = UDim2New(0, 0, 0, -1),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
             
@@ -1453,7 +1349,7 @@ local Library do
                 BorderColor3 = FromRGB(0, 0, 0),
                 Text = "[" .. Key .. "] " .. Name,
                 Name = "\0",
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 TextTruncate = Enum.TextTruncate.AtEnd,
@@ -1555,7 +1451,6 @@ local Library do
                 BackgroundColor3 = FromRGB(255, 0, 0)
             }) 
 
-
             Colorpicker.CalculateCount = function(self, Index, YScale, YOffset)
                 local MaxButtonsAdded = 5
 
@@ -1616,12 +1511,12 @@ local Library do
                 BorderColor3 = FromRGB(0, 0, 0),
                 Text = Data.Name,
                 Name = "\0",
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Position = UDim2New(0, -2, 0, -3),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
             
@@ -1649,10 +1544,10 @@ local Library do
             
             Instances:Create("UIPadding", {
                 Parent = Items["ColorpickerWindow"].Instance,
-                PaddingTop = UDimNew(0, 6),
-                PaddingBottom = UDimNew(0, 6),
-                PaddingRight = UDimNew(0, 6),
-                PaddingLeft = UDimNew(0, 6)
+                PaddingTop = UDimNew(0, 8),
+                PaddingBottom = UDimNew(0, 8),
+                PaddingRight = UDimNew(0, 8),
+                PaddingLeft = UDimNew(0, 8)
             }) 
             
             Items["Palette"] = Instances:Create("TextButton", {
@@ -1724,7 +1619,7 @@ local Library do
                 AnchorPoint = Vector2New(1, 0),
                 Image = Library:GetImage("Hue"),
                 Name = "\0",
-                Position = UDim2New(1, 0, 0, 15),
+                Position = UDim2New(1, 0, 0, 17),
                 Size = UDim2New(0, 18, 1, -15),
                 BorderSizePixel = 0,
                 BackgroundColor3 = FromRGB(255, 255, 255)
@@ -2137,7 +2032,7 @@ local Library do
                 Position = UDim2New(0, 1, 0, 0),
                 Size = UDim2New(1, 0, 1, 0),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             
@@ -2185,8 +2080,8 @@ local Library do
                 BorderSizePixel = 0,
                 BackgroundTransparency = 1,
                 Position = UDim2New(0, 1, 0, 0),
-                Size = UDim2New(1, 0, 0, 15),
-                TextSize = 12,
+                Size = UDim2New(1, 0, 0, 17),
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Toggle"]:AddToTheme({TextColor3 = "Text"})
             
@@ -2207,8 +2102,8 @@ local Library do
                 BorderSizePixel = 0,
                 BackgroundTransparency = 1,
                 Position = UDim2New(0, 1, 0, 15),
-                Size = UDim2New(1, 0, 0, 15),
-                TextSize = 12,
+                Size = UDim2New(1, 0, 0, 17),
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Hold"]:AddToTheme({TextColor3 = "Text"})
             
@@ -2229,8 +2124,8 @@ local Library do
                 BorderSizePixel = 0,
                 BackgroundTransparency = 1,
                 Position = UDim2New(0, 1, 0, 30),
-                Size = UDim2New(1, 0, 0, 15),
-                TextSize = 12,
+                Size = UDim2New(1, 0, 0, 17),
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Always"]:AddToTheme({TextColor3 = "Text"})
              
@@ -2393,7 +2288,7 @@ local Library do
                     return
                 end
 
-                -- Mouse buttons are UI-only; they can never trigger a feature.
+                
                 if Key.EnumType == Enum.UserInputType
                     and (Key == Enum.UserInputType.MouseButton1 or Key == Enum.UserInputType.MouseButton2 or Key == Enum.UserInputType.MouseButton3) then
                     RefreshKeyLabel()
@@ -2502,7 +2397,7 @@ local Library do
                         Keybind:Set(Input.KeyCode)
                     end
                 elseif Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.MouseButton2 then
-                    -- Clicking cancels picking instead of binding a mouse button.
+                    
                     RefreshKeyLabel()
                 else
                     RefreshKeyLabel()
@@ -2630,12 +2525,12 @@ local Library do
                 BorderColor3 = FromRGB(0, 0, 0),
                 Text = Window.Name,
                 Name = "\0",
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Position = UDim2New(0, 6, 0, 1),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2678,7 +2573,7 @@ local Library do
                 Parent = Items["Pages"].Instance,
                 FillDirection = Enum.FillDirection.Horizontal,
                 HorizontalFlex = Enum.UIFlexAlignment.Fill,
-                Padding = UDimNew(0, 6),
+                Padding = UDimNew(0, 10),
                 SortOrder = Enum.SortOrder.LayoutOrder
             })
 
@@ -2706,6 +2601,9 @@ local Library do
         function Window:SetOpen(Bool)
             Window.IsOpen = Bool
             Items["MainFrame"].Instance.Visible = Bool
+            if not Bool then
+                Library:CloseDropdowns()
+            end
         end
 
         Library:Connect(UserInputService.InputBegan, function(Input)
@@ -2771,7 +2669,7 @@ local Library do
                 Position = UDim2New(0, 0, 0, -1),
                 BorderSizePixel = 0,
                 BorderColor3 = FromRGB(0, 0, 0),
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             
@@ -2864,15 +2762,15 @@ local Library do
                     
                     Instances:Create("UIPadding", {
                         Parent = NewColumn.Instance,
-                        PaddingTop = UDimNew(0, 6),
-                        PaddingBottom = UDimNew(0, 6),
-                        PaddingRight = UDimNew(0, 6),
-                        PaddingLeft = UDimNew(0, 6)
+                        PaddingTop = UDimNew(0, 8),
+                        PaddingBottom = UDimNew(0, 8),
+                        PaddingRight = UDimNew(0, 8),
+                        PaddingLeft = UDimNew(0, 8)
                     })
                     
                     Instances:Create("UIListLayout", {
                         Parent = NewColumn.Instance,
-                        Padding = UDimNew(0, 8),
+                        Padding = UDimNew(0, 10),
                         SortOrder = Enum.SortOrder.LayoutOrder
                     }) 
 
@@ -2904,7 +2802,7 @@ local Library do
                     Parent = Items["SubTabs"].Instance,
                     FillDirection = Enum.FillDirection.Horizontal,
                     HorizontalFlex = Enum.UIFlexAlignment.Fill,
-                    Padding = UDimNew(0, 6),
+                    Padding = UDimNew(0, 10),
                     SortOrder = Enum.SortOrder.LayoutOrder
                 }) 
             end
@@ -2929,6 +2827,7 @@ local Library do
         end
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
+            Library:CloseDropdowns()
             for Index, Value in Page.Window.Pages do
                 Value:Turn(Value == Page)
             end
@@ -3072,9 +2971,9 @@ local Library do
 
             Instances:Create("UIPadding", {
                 Parent = Items["Subtab"].Instance,
-                PaddingTop = UDimNew(0, 6),
-                PaddingRight = UDimNew(0, 6),
-                PaddingLeft = UDimNew(0, 6)
+                PaddingTop = UDimNew(0, 8),
+                PaddingRight = UDimNew(0, 8),
+                PaddingLeft = UDimNew(0, 8)
             }) 
 
             Instances:Create("UIListLayout", {
@@ -3110,15 +3009,15 @@ local Library do
 
                 Instances:Create("UIPadding", {
                     Parent = NewColumn.Instance,
-                    PaddingTop = UDimNew(0, 6),
-                    PaddingBottom = UDimNew(0, 6),
-                    PaddingRight = UDimNew(0, 6),
-                    PaddingLeft = UDimNew(0, 6)
+                    PaddingTop = UDimNew(0, 8),
+                    PaddingBottom = UDimNew(0, 8),
+                    PaddingRight = UDimNew(0, 8),
+                    PaddingLeft = UDimNew(0, 8)
                 }) 
 
                 Instances:Create("UIListLayout", {
                     Parent = NewColumn.Instance,
-                    Padding = UDimNew(0, 8),
+                    Padding = UDimNew(0, 10),
                     SortOrder = Enum.SortOrder.LayoutOrder
                 }) 
 
@@ -3146,6 +3045,7 @@ local Library do
         end
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
+            Library:CloseDropdowns()
             local PageSubPages = (SubPage.Page and SubPage.Page.SubPages) or SubPage.Window.SubPages
 
             for Index, Value in PageSubPages do
@@ -3189,7 +3089,7 @@ local Library do
             Items["Section"] = Instances:Create("Frame", {
                 Parent = Section.Page.ColumnsData[Section.Side].Instance,
                 Name = "\0",
-                Size = UDim2New(1, 0, 0, 25),
+                Size = UDim2New(1, 0, 0, 27),
                 BorderColor3 = FromRGB(27, 27, 32),
                 BorderSizePixel = 2,
                 AutomaticSize = Enum.AutomaticSize.Y,
@@ -3205,7 +3105,7 @@ local Library do
             
             Instances:Create("UIPadding", {
                 Parent = Items["Section"].Instance,
-                PaddingBottom = UDimNew(0, 6)
+                PaddingBottom = UDimNew(0, 8)
             })
             
             Items["AccentLine"] = Instances:Create("Frame", {
@@ -3235,7 +3135,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Position = UDim2New(0, 4, 0, 2),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             
@@ -3249,16 +3149,16 @@ local Library do
                 Parent = Items["Section"].Instance,
                 Name = "\0",
                 BackgroundTransparency = 1,
-                Position = UDim2New(0, 7, 0, 21),
+                Position = UDim2New(0, 8, 0, 23),
                 BorderColor3 = FromRGB(0, 0, 0),
-                Size = UDim2New(1, -14, 1, -20),
+                Size = UDim2New(1, -14, 1, -22),
                 BorderSizePixel = 0,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })
             
             Instances:Create("UIListLayout", {
                 Parent = Items["Content"].Instance,
-                Padding = UDimNew(0, 6),
+                Padding = UDimNew(0, 10),
                 SortOrder = Enum.SortOrder.LayoutOrder
             })
         end
@@ -3285,7 +3185,7 @@ local Library do
             Items["MultiSection"] = Instances:Create("Frame", {
                 Parent = MultiSection.Page.ColumnsData[MultiSection.Side].Instance,
                 Name = "\0",
-                Size = UDim2New(1, 0, 0, 25),
+                Size = UDim2New(1, 0, 0, 27),
                 BorderColor3 = FromRGB(27, 27, 32),
                 BorderSizePixel = 2,
                 AutomaticSize = Enum.AutomaticSize.Y,
@@ -3301,7 +3201,7 @@ local Library do
             
             Instances:Create("UIPadding", {
                 Parent = Items["MultiSection"].Instance,
-                PaddingBottom = UDimNew(0, 6)
+                PaddingBottom = UDimNew(0, 8)
             }) 
             
             Items["AccentLine"] = Instances:Create("Frame", {
@@ -3390,7 +3290,7 @@ local Library do
                     Position = UDim2New(0, 0, 0, -1),
                     BorderSizePixel = 0,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    TextSize = 12,
+                    TextSize = 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  SubItems["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -3463,7 +3363,7 @@ local Library do
                 
                 Instances:Create("UIListLayout", {
                     Parent = SubItems["Content"].Instance,
-                    Padding = UDimNew(0, 6),
+                    Padding = UDimNew(0, 10),
                     SortOrder = Enum.SortOrder.LayoutOrder
                 }) 
             end
@@ -3588,7 +3488,7 @@ local Library do
             
             Instances:Create("UIPadding", {
                 Parent = Items["Section"].Instance,
-                PaddingBottom = UDimNew(0, 6)
+                PaddingBottom = UDimNew(0, 8)
             })
             
             Items["AccentLine"] = Instances:Create("Frame", {
@@ -3618,7 +3518,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Position = UDim2New(0, 4, 0, 2),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             
@@ -3657,7 +3557,7 @@ local Library do
             
             Instances:Create("UIListLayout", {
                 Parent = Items["Content"].Instance,
-                Padding = UDimNew(0, 6),
+                Padding = UDimNew(0, 10),
                 SortOrder = Enum.SortOrder.LayoutOrder
             })
         end
@@ -3782,7 +3682,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Left,
                 BorderSizePixel = 0,
                 BorderColor3 = FromRGB(0, 0, 0),
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             
@@ -3957,7 +3857,7 @@ local Library do
                 TextTruncate = Enum.TextTruncate.AtEnd,
                 Position = UDim2New(0, 0, 0, -1),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             
@@ -4052,7 +3952,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Size = UDim2New(1, 0, 0, 13),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             
@@ -4115,7 +4015,7 @@ local Library do
                 Position = UDim2New(0, 0, 0, -1),
                 Size = UDim2New(1, 0, 1, 0),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Value"]:AddToTheme({TextColor3 = "Text"})
 
@@ -4295,7 +4195,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Size = UDim2New(1, 0, 0, 13),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -4343,7 +4243,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Right,
                 Position = UDim2New(0, -4, 0, -1),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Open"]:AddToTheme({TextColor3 = "Text"})
 
@@ -4366,7 +4266,7 @@ local Library do
                 TextTruncate = Enum.TextTruncate.AtEnd,
                 Position = UDim2New(0, 5, 0, -1),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Value"]:AddToTheme({TextColor3 = "Text"})
             
@@ -4565,7 +4465,7 @@ local Library do
                 Name = "\0",
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 ZIndex = 10002,
                 TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
@@ -4585,7 +4485,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Left,
                 BorderSizePixel = 0,
                 ZIndex = 10003,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
             
@@ -4697,6 +4597,7 @@ local Library do
             local Token = DropdownOpenToken
 
             Dropdown.IsOpen = Bool
+            Library.OpenDropdowns[Dropdown] = Bool and true or nil
             Debounce = true 
 
             if DropdownPositionConnection then
@@ -4803,7 +4704,7 @@ local Library do
                 BackgroundTransparency = 1,
                 Name = "\0",
                 BorderColor3 = FromRGB(0, 0, 0),
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 BorderSizePixel = 0,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
@@ -4819,7 +4720,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment[Label.Alignment],
                 Size = UDim2New(1, 0, 1, 0),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -4920,7 +4821,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Size = UDim2New(1, 0, 0, 13),
                 BorderSizePixel = 0,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             
@@ -4969,7 +4870,7 @@ local Library do
                 PlaceholderColor3 = FromRGB(178, 178, 178),
                 TextXAlignment = Enum.TextXAlignment.Left,
                 PlaceholderText = Textbox.Placeholder,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Inline"]:AddToTheme({TextColor3 = "Text"})
             
@@ -5191,7 +5092,7 @@ local Library do
                 Name = "\0",
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
-                Size = UDim2New(1, 0, 0, 15),
+                Size = UDim2New(1, 0, 0, 17),
                 ZIndex = 5,
                 TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
@@ -5211,7 +5112,7 @@ local Library do
                 TextXAlignment = Enum.TextXAlignment.Center,
                 BorderSizePixel = 0,
                 ZIndex = 5,
-                TextSize = 12,
+                TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
             
@@ -5302,11 +5203,10 @@ local Library do
         return Listbox
     end
 
-
-    -- ==========================================================================
-    -- Scoot-style API compatibility layer
-    -- Lets feature scripts written for Scoot's UI run on the Thugsense library.
-    -- ==========================================================================
+    
+    
+    
+    
 
     do
         local BaseButton = Library.Sections.Button
@@ -5372,9 +5272,9 @@ local Library do
         end
     end
 
-    -- ==========================================================================
-    -- Settings page (Scoot's CreateSettingsPage, rebuilt for Thugsense widgets)
-    -- ==========================================================================
+    
+    
+    
 
     Library.CreateSettingsPage = function(self, Window, Watermark, KeybindList, ESPPreview)
         local ESPPreviewWanted = ESPPreview ~= nil
@@ -5470,8 +5370,8 @@ local Library do
 
         Library:RefreshThemesList(ThemesSearchbox)
 
-        -- Kept as SubPages[2] on purpose: feature scripts add their cloud config
-        -- section to SettingsPage.SubPages[2].
+        
+        
         local ConfigsSubPage = SettingsPage:SubPage({ Name = "Configs", Columns = 2 })
         local ConfigName = ""
         local ConfigSelected
@@ -5735,9 +5635,9 @@ local Library do
         return SettingsPage
     end
 
-    -- ==========================================================================
-    -- Playerlist (Scoot-compatible API, Thugsense styling)
-    -- ==========================================================================
+    
+    
+    
 
     Library.Pages.Playerlist = function(self, Data)
         Data = Data or { }
@@ -6049,8 +5949,7 @@ local Library do
         return Playerlist
     end
 
-
-    -- ===== Ported Scoot components: ESP Preview =====
+    
     Library.ESPPreview = function(self, Data)
         Data = Data or { }
 
@@ -6080,8 +5979,8 @@ local Library do
             Root = nil,
             RootOrigin = nil,
 
-            -- Which side of the box each element sits on. Draggable in the preview and readable
-            -- from outside (ESPPreview.Sides / OnSideChanged) so the preview drives the real ESP.
+            
+            
             Sides = Data.Sides or { Name = "left", Tool = "left", Health = "left" },
             OnSideChanged = Data.OnSideChanged,
         }
@@ -6294,7 +6193,7 @@ local Library do
             })  Items["ESPDistanceStroke"] = Items["ESPDistance"]:TextBorder()
             Items["ESPDistance"].Instance.Visible = false
 
-            -- Invisible grab handles (so thin things like the healthbar are still easy to grab)
+            
             for _, Key in { "Name", "Tool", "Health" } do
                 Items["Grab" .. Key] = Instances:Create("Frame", {
                     Parent = Items["Overlay"].Instance,
@@ -6309,7 +6208,7 @@ local Library do
                 })
             end
 
-            -- Outline drawn around whatever element you're grabbing.
+            
             Items["GrabIndicator"] = Instances:Create("Frame", {
                 Parent = Items["Overlay"].Instance,
                 Name = "\0",
@@ -6419,9 +6318,9 @@ local Library do
                     Descendant.CanTouch = false
                     Descendant.Massless = true
 
-                    -- The local character often has parts hidden by the camera scripts
-                    -- (head in first person) or by the game (arms while holding a weapon)
-                    -- via LocalTransparencyModifier. Reset it so the preview is fully visible.
+                    
+                    
+                    
                     Descendant.LocalTransparencyModifier = 0
 
                     if Descendant.Transparency >= 1 then
@@ -6454,7 +6353,7 @@ local Library do
             local Root = Model.PrimaryPart or Model:FindFirstChild("HumanoidRootPart") or Model:FindFirstChildWhichIsA("BasePart")
 
             if AnchorAll then
-                -- Fully freeze the model in its standing pose.
+                
                 for _, Descendant in Model:GetDescendants() do
                     if Descendant:IsA("BasePart") then
                         Descendant.Anchored = true
@@ -6498,16 +6397,16 @@ local Library do
                 return nil
             end
 
-            -- Accessory handles only snap onto the body once the model is parented
-            -- into the DataModel (welds resolve). Off-parent they sit at bogus offsets
-            -- and blow up the bounding box, which zooms the camera out to a sliver.
-            -- Parenting under the camera resolves them without the avatar flashing in world.
+            
+            
+            
+            
             Model.Parent = Workspace.CurrentCamera or Camera
             RunService.Heartbeat:Wait()
             RunService.Heartbeat:Wait()
 
-            -- Safety net: if accessory welds still haven't resolved (bounding box
-            -- absurdly large), drop the accessories so the body always fits the view.
+            
+            
             local _, BoundSize = Model:GetBoundingBox()
 
             if BoundSize.Magnitude > 30 then
@@ -6558,8 +6457,8 @@ local Library do
 
             ESPPreview.IdleTrack = Track
 
-            -- Freeze the avatar on a natural pose so it stands perfectly still
-            -- (the idle animation has root motion that would otherwise slide it around).
+            
+            
             task.spawn(function()
                 task.wait(0.15)
 
@@ -6723,10 +6622,10 @@ local Library do
                 if AvatarModel then
                     AvatarModel.Parent = WorldModel
 
-                    -- Accessory welds only snap onto the body once the model sits
-                    -- unanchored inside the world model for a frame. We anchored in
-                    -- PrepareModel before that, which froze handles at stale offsets,
-                    -- so unanchor, let them settle, then recenter and freeze again.
+                    
+                    
+                    
+                    
                     for _, Descendant in ipairs(AvatarModel:GetDescendants()) do
                         if Descendant:IsA("BasePart") then
                             Descendant.Anchored = false
@@ -6876,7 +6775,7 @@ local Library do
 
             local White = FromRGB(255, 255, 255)
 
-            -- Box (gradient outline)
+            
             local ShowBox = Settings.Boxes
             if ShowBox == nil then ShowBox = true end
 
@@ -6925,7 +6824,7 @@ local Library do
             local Sides = ESPPreview.Sides or { }
             local Stack = { left = 0, right = 0 }
 
-            -- Place a label on a box side. Left/right align to the UPPER part and stack downwards.
+            
             local function PlaceText(Inst, Side, Gap)
                 Gap = Gap or 2
                 if Side == "top" then
@@ -6945,7 +6844,7 @@ local Library do
                 end
             end
 
-            -- Healthbar (side-aware, gradient from the ESP health colors, animated 0 -> 100 -> 0)
+            
             local ShowHealth = Settings.Healthbar
             if ShowHealth == nil then ShowHealth = true end
 
@@ -6986,7 +6885,7 @@ local Library do
                 }
             end
 
-            -- Names
+            
             local ShowNames = Settings.Names
             if ShowNames == nil then ShowNames = true end
 
@@ -7000,7 +6899,7 @@ local Library do
                 end
             end
 
-            -- Tools (distance label removed)
+            
             local ShowTools = Settings.Tools
             if ShowTools == nil then ShowTools = true end
 
@@ -7014,8 +6913,8 @@ local Library do
                 end
             end
 
-            -- Move the invisible grab handles over each element (padded so the thin healthbar is
-            -- still easy to grab).
+            
+            
             local function MatchHandle(Handle, Element, PadX, PadY, MinW)
                 local Rel = Element.AbsolutePosition - Overlay.AbsolutePosition
                 local Size = Element.AbsoluteSize
@@ -7027,7 +6926,7 @@ local Library do
             MatchHandle(Items["GrabTool"].Instance, Items["ESPTool"].Instance, 2, 1, 0)
             MatchHandle(Items["GrabHealth"].Instance, Items["HealthFill"].Instance, 5, 2, 8)
 
-            -- Outline whatever element is currently being dragged.
+            
             local Indicator = Items["GrabIndicator"].Instance
             local DraggedHandle = DraggingKey and Items["Grab" .. DraggingKey]
             if DraggedHandle then
@@ -7074,8 +6973,8 @@ local Library do
 
         if ESPPreview.UserId then
             Library:Thread(function()
-                -- Defer the avatar fetch/render so it never competes with the
-                -- menu build, and only load while the preview is visible.
+                
+                
                 task.wait(0.75)
 
                 while Items["Panel"].Instance and Items["Panel"].Instance.Parent and not ESPPreview.IsOpen do
@@ -7208,8 +7107,8 @@ local Library do
             end
         end)
 
-        -- Grab-and-drop the overlay elements (name / tool / healthbar) via their invisible handles,
-        -- then snap them to a box side.
+        
+        
         local DragTargets = {
             Name = Items["ESPName"].Instance,
             Tool = Items["ESPTool"].Instance,
@@ -7282,7 +7181,7 @@ local Library do
         return ESPPreview
     end
 
-    -- ===== Ported Scoot components: Spotify =====
+    
     Library.Spotify = function(self, Data)
         Data = Data or { }
 
@@ -7334,7 +7233,7 @@ local Library do
             return ok and asset or nil
         end
 
-        -- bundled transport icons (white silhouettes, base64 PNG) --------------
+        
         local B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
         local ICON_DATA = {
     play = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADlklEQVR42u2bO2gUURSGv9mZYEARFFERQbQQu1j4aALis7BJIWKjYKGFhTbBN6KdLxS0VFR8VClEBMUowaCiQRM1pEtjoYIoWCiImnlYzBk8LCl2Z2dm752dC9vc2d2Ze85//3PPf844URTRyaNGh4/KAJUBKgNUBkgzXPmta7sBnIzCYA0IOwEBjnyOA0PATpkPAU+ulRYBiZd7gPdqfgg4CLxT2yMoIwIS7y4QQ0zJQjcCr4BTQLfMubagIQ0JhooAE2/PAE6KITbJXGQDSaYxQDBNRIgAH1gJPAGuAAvluzWTw21aBEy3PTy5FgF7gTFgt8wZS5JZGUD/nyNoWATcAB4AK2TOuG2RxgCNhA1PvhcAW4E3wGGgyzSSzHNvOookZwFngJfAOpNIsghy0iS5ChgGLgNzTSDJom5cT5L7gVFgex1Jlj4b1CS5FBiQzzKZc4p+pnZBL0FDICgYFVQUnlfUUsI5q3snJDlHeOEZsLbIkGnCCc1VIbMXeA6cBWYXETJNOaLqkNkFHJKzQ58KmV4nSGI6ZC4H7gG3gcUyl3nINDFJ0SEzFNFlTPKLzPMKk0XRxNsBMF8yzEERZDIjSRtUYU2SW4AR0R4yEV9skcU1SXYTq08jwOZW8wrb6gKaJHuAx8BVYJ7KK0pfGKknyT1ykuzjv1zXEZWhhCR9YImEzDXNGqEMpTFHqVQzmz2u22yASEWBKaAfeKpCZ6kNEKjI8FCgf7EODQ2npTaNUEWDT8BR4E4rFSnPMrgnz3sNOAZ8VSgO0goTNsDdlWcdJ1aXB7OqQ3qGez2URf4iVpXPA79lLsyiCOsZ7nWXuNTWD0zkUX2uGUhyide/AfskAZpQKXCQtThpIsndBE4AH1VThk9O6qxJJDcBHJHYnjyf32A5zjoDaJL7C5wDTgvhJSTnU4A+3w5ZXJPcsJDc23a02NTaSHLfgQPAell8LiSXBwLS7kdf3W9A9vqHvEnOBASEStefBLYBO2TxnuICa6rDThNISbT8SLK11cBd1Wnq0+aR1xbQoe21kNwLE/sIs26R0SLFD9nnvbL4tpBckeeAhORc4D5x9+ik8roP5WyX1+Wqz8AuYoV20lSvt4oAVy1at7ZcJ26i/qIM62P4SGOAn3VV2nHZ649sbJZu9n2BpChxAdgA3AIuAX8UMqJOfGHCKq9nQYI1tXDH1sW3igDHNrhnHQaj6rW5ygCVASoD2D7+AY4KAKdHF3uWAAAAAElFTkSuQmCC",
@@ -7420,7 +7319,7 @@ local Library do
         local Font = (Library.Fonts and Library.Fonts["Prompt"]) or Library.Font
         local Items = { }
 
-        -- own 2D overlay, independent of the menu / 3D UI ---------------------
+        
         local guiParent = (type(gethui) == "function" and (pcall(gethui) and gethui()))
             or (pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
             or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
@@ -7429,7 +7328,7 @@ local Library do
             IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Global, DisplayOrder = 999,
         })
 
-        -- panel + header ------------------------------------------------------
+        
         Items["Panel"] = Instances:Create("Frame", {
             Parent = Items["Screen"].Instance, Name = "\0",
             Position = Data.Position or UDim2New(0, 24, 0, 24), Size = UDim2New(0, 282, 0, 262),
@@ -7459,7 +7358,7 @@ local Library do
             BorderSizePixel = 0, BackgroundColor3 = FromRGB(202, 243, 255),
         })  Items["Liner"]:AddToTheme({ BackgroundColor3 = "Accent" })
 
-        -- art + meta ----------------------------------------------------------
+        
         Items["Art"] = Instances:Create("ImageLabel", {
             Parent = Items["Panel"].Instance, Name = "\0",
             Position = UDim2New(0, 8, 0, 35), Size = UDim2New(0, 86, 0, 86),
@@ -7509,7 +7408,7 @@ local Library do
             Items[key]:TextBorder()
         end
 
-        -- transport -----------------------------------------------------------
+        
         local function transport(iconKey, glyph, x)
             local container = Instances:Create("Frame", {
                 Parent = Items["Panel"].Instance, Name = "\0",
@@ -7567,9 +7466,9 @@ local Library do
             Items["Lyrics"][i]:TextBorder()
         end
 
-        -- sky lyrics: the words are written far out in the sky, not attached to
-        -- the player. A local anchor part is parked high in front of the camera
-        -- and the billboard floats there, gently bobbing.
+        
+        
+        
         local SKY_LINES = 3
         local SkyLabels = { }
         local skyRows = { }
@@ -7627,8 +7526,8 @@ local Library do
             })  SkyLabels[i]:AddToTheme({ TextColor3 = "Text", TextStrokeColor3 = "Text Stroke" })
         end
 
-        -- Invisible full-line label: used only to measure the line so the
-        -- word-by-word labels all share one stable text size (no rescaling).
+        
+        
         Items["SkySizer"] = Instances:Create("TextLabel", {
             Parent = Items["Sky"].Instance, Name = "\0",
             BackgroundTransparency = 1, BorderSizePixel = 0,
@@ -7705,7 +7604,7 @@ local Library do
             return lbl
         end
 
-        -- layout --------------------------------------------------------------
+        
         local function layout()
             local cfg = Spotify.Cfg
             local W = 282
@@ -7783,7 +7682,7 @@ local Library do
             end
         end
 
-        -- state + render ------------------------------------------------------
+        
         local state = { title = "", artist = "", pos = 0, dur = 1, playing = false, art = nil, at = 0, key = nil, lyrics = {}, synced = false, lyricStatus = nil }
 
         local function fmt(t)
@@ -7904,8 +7803,8 @@ local Library do
             dt = dt or 0
             local t = os.clock()
 
-            -- Placed once, far out in the sky, and then never moved again.
-            -- Walking, turning, or changing camera angle does not affect it.
+            
+            
             if not skyPos then
                 local look = camera.CFrame.LookVector
                 local flat = Vector3.new(look.X, 0, look.Z)
@@ -7919,8 +7818,8 @@ local Library do
                     + flat * 1800
                     + Vector3.new(0, 900, 0)
 
-                -- Face the board at the spot it was created from, then leave it
-                -- alone forever. It is a flat 2D plane hanging in the sky.
+                
+                
                 board.CFrame = CFrame.lookAt(
                     skyPos,
                     Vector3.new(base.X, skyPos.Y, base.Z)
@@ -8019,8 +7918,8 @@ local Library do
                     lineKey = "p:" .. li
                 end
 
-                -- The visible word labels all share the size of the whole line,
-                -- so text never re-scales as each word is written out.
+                
+                
                 local sizer = Items["SkySizer"].Instance
                 if skySizerText ~= fullText then
                     skySizerText = fullText
@@ -8154,46 +8053,8 @@ local Library do
         return Spotify
     end
 
-    -- ===== Embedded 3D UI (ships inside the library; no external file / localhost) =====
+    
     local Hood3DPresenter = (function()
---[[
-================================================================================
-  Hood3DUI  --  Build 1: the 3D UI (presenter)
-================================================================================
-  * On OPEN the panel is placed at the player's position, a little forward and
-    angled slightly upward, and then STAYS where it is while open.
-  * While CLOSED it follows the character (so it is already with you when you
-    open it).
-  * Smaller: the menu content is scaled down (keeps slider accuracy).
-  * Little open effect: a scale "pop" as it appears.
-  * Draggable (grab the top / drag key), scroll for depth, smooth movement.
-  * No world greyscale / blur -- the world is untouched.
-  * Watermark / Keybind list / ESP preview / notifications stay 2D on screen.
-    Only the menu itself is 3D.
-
-  API:
-      ui:Reanchor()  ui:SetDistance(n)  ui:SetScale(n)
-      ui:SetEnabled(bool)  ui:SetAnchorMode("Player")  ui:Destroy()
-
-  OPTIONS
-      AnchorMode       "Player" | "World"                            ("Player")
-      Side             "Front" | "Behind"                             ("Front")
-      Distance         studs in front of you                          (5)
-      VerticalOffset   raise/lower the panel (studs)                  (0)
-      Tilt             degrees, angles the panel upward               (9)
-      Scale            menu size (0.2..2.5)                           (1.5)
-      Smoothness       position easing (higher = snappier)            (9)
-      DragScale        how far it moves per mouse pixel               (0.8)
-      (drag by the window's top bar, or hold the drag key and drag anywhere)
-      DragKey          hold to drag from anywhere (nil to disable)    (LeftAlt)
-      ReanchorKey      snap back in front of you                      (Home)
-      AlwaysOnTop      draw over geometry (off = occluded by walls/you)(false)
-      LockWindow       misclicks don't drag the Scoot window          (true)
-      KeepOnScreen     watermark/keybinds/ESP/notifs stay 2D          (true)
-      PopTime          open "pop" duration (0 to disable)             (0.3)
-      Parent           where the part lives                           (Workspace)
-================================================================================
-]]
 
 local Hood3D = {}
 Hood3D.__index = Hood3D
@@ -8248,13 +8109,13 @@ local function isOverlay(child)
 		return false
 	end
 	if child:FindFirstChildWhichIsA("ViewportFrame", true) then
-		return true -- ESP preview panel
+		return true 
 	end
 	if child.AnchorPoint.Y >= 1 then
-		return true -- watermark (bottom-anchored)
+		return true 
 	end
 	if child.AnchorPoint.X <= 0 and child.AnchorPoint.Y == 0.5 then
-		return true -- keybind list (left-middle)
+		return true 
 	end
 	return false
 end
@@ -8265,7 +8126,7 @@ function Hood3D.Mount(target, options)
 	local gui = resolveScreenGui(target)
 	assert(gui, "Hood3D.Mount: expected a ScreenGui (or a Scoot Library / holder object)")
 
-	-- Things that should stay on screen (2D) rather than go on the 3D panel.
+	
 	local keepInstances = {}
 	if type(target) == "table" then
 		if target.NotifHolder and typeof(target.NotifHolder.Instance) == "Instance" then
@@ -8344,15 +8205,15 @@ function Hood3D.Mount(target, options)
 		return (keepOnScreen and isOverlay(child)) or keepInstances[child] == true
 	end
 
-	-- Move everything to the surface, except the on-screen HUD elements.
+	
 	for _, child in ipairs(gui:GetChildren()) do
 		if not staysOnScreen(child) then
 			child.Parent = surface
 		end
 	end
 
-	-- Wrap ONLY the menu window so we can scale it (and pop it) without
-	-- affecting dropdown / colorpicker / tooltip frames, which stay siblings.
+	
+	
 	local windowFrame = findWindow(surface)
 	local contentScale
 	local disabledDragConnections = {}
@@ -8374,9 +8235,9 @@ function Hood3D.Mount(target, options)
 		windowFrame.Position = UDim2.fromScale(0.5, 0.5)
 		windowFrame.Parent = wrapper
 
-		-- Kill Scoot's own window-drag so it can't fight the panel drag /
-		-- jiggle against the position lock (that was the "moves then snaps back").
-		-- Keep the connections so we can re-enable them when 3D mode is turned off.
+		
+		
+		
 		local gc = getconnections or (getgenv and getgenv().getconnections)
 		if gc then
 			pcall(function()
@@ -8420,9 +8281,9 @@ function Hood3D.Mount(target, options)
 
 	local cursor = hideCustomCursor and findCustomCursor(surface) or nil
 
-	------------------------------------------------------------------
-	-- Geometry: canvas == viewport, 1 surface px == 1 screen px.
-	------------------------------------------------------------------
+	
+	
+	
 	local lastVpX, lastVpY, lastFov, lastDist = -1, -1, -1, -1
 
 	local function updateGeometry()
@@ -8448,9 +8309,9 @@ function Hood3D.Mount(target, options)
 		panel.Size = state.BaseSize
 	end
 
-	------------------------------------------------------------------
-	-- Placement
-	------------------------------------------------------------------
+	
+	
+	
 	local function characterPart()
 		local player = Players.LocalPlayer
 		local character = player and player.Character
@@ -8498,7 +8359,7 @@ function Hood3D.Mount(target, options)
 		return computePlayerTarget()
 	end
 
-	-- Base anchor WITHOUT the drag offset. Follows while closed; frozen while open.
+	
 	local function follow()
 		local pos, rot = computeTarget()
 		state.BasePosition = pos
@@ -8510,9 +8371,9 @@ function Hood3D.Mount(target, options)
 		return state.BasePosition + state.DragOffset
 	end
 
-	------------------------------------------------------------------
-	-- Dragging (stable screen-space delta) + scroll wheel = resize
-	------------------------------------------------------------------
+	
+	
+	
 	local drag = {
 		active = false,
 		startMouse = Vector2.new(),
@@ -8549,7 +8410,7 @@ function Hood3D.Mount(target, options)
 		local localPos = panel.CFrame:PointToObjectSpace(result.Position)
 		local canvasY = (panel.Size.Y * 0.5 - localPos.Y) * surface.PixelsPerStud
 		local windowTop = (windowFrame and windowFrame.AbsolutePosition.Y) or 0
-		return canvasY < (windowTop + 40) -- the top bar of the window + area above it
+		return canvasY < (windowTop + 40) 
 	end
 
 	table.insert(state.Connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -8575,7 +8436,7 @@ function Hood3D.Mount(target, options)
 			local focal = (vp.Y * 0.5) / math.tan(math.rad(camera.FieldOfView) * 0.5)
 			local dist = (panel.Position - camera.CFrame.Position).Magnitude
 			local worldScale = (dist / math.max(focal, 1)) * dragScale
-			-- move within the camera's screen plane (right / up), like dragging on glass
+			
 			local offset = camera.CFrame.RightVector * (delta.X * worldScale)
 				+ camera.CFrame.UpVector * (-delta.Y * worldScale)
 			state.DragOffset = drag.startOffset + offset
@@ -8588,9 +8449,9 @@ function Hood3D.Mount(target, options)
 		end
 	end))
 
-	------------------------------------------------------------------
-	-- Open / close + little open "pop"
-	------------------------------------------------------------------
+	
+	
+	
 	local function isOpen()
 		if windowFrame then
 			return windowFrame.Visible
@@ -8598,8 +8459,8 @@ function Hood3D.Mount(target, options)
 		return gui.Enabled
 	end
 
-	-- Pop by scaling the PART (cheap) instead of a UIScale (which would force
-	-- the whole menu to re-layout every frame).
+	
+	
 	local function playOpenEffect()
 		if popTime <= 0 then
 			return
@@ -8615,7 +8476,7 @@ function Hood3D.Mount(target, options)
 		state.Open = open
 
 		if open and not wasOpen then
-			-- Land at the player's current spot and freeze there.
+			
 			state.DragOffset = Vector3.new()
 			local pos, rot = computeTarget()
 			state.BasePosition = pos
@@ -8639,9 +8500,9 @@ function Hood3D.Mount(target, options)
 		end))
 	end
 
-	------------------------------------------------------------------
-	-- Frame loop
-	------------------------------------------------------------------
+	
+	
+	
 	local lastSurfaceEnabled, lastCanQuery, lastWindowPos, lastCFrame
 
 	table.insert(state.Connections, RunService.RenderStepped:Connect(function(dt)
@@ -8654,13 +8515,13 @@ function Hood3D.Mount(target, options)
 			end
 		end
 
-		-- Follow only while the menu is closed; once open it stays put.
+		
 		if not state.Open then
 			follow()
 		end
 
 		local target = targetPosition()
-		-- snap the follow fast while actively dragging so it tracks the cursor
+		
 		local rate = drag.active and math.max(smoothing, 60) or smoothing
 		local alpha = 1 - math.exp(-dt * rate)
 		local nextPos = panel.Position:Lerp(target, alpha)
@@ -8668,13 +8529,13 @@ function Hood3D.Mount(target, options)
 			nextPos = target
 		end
 		local targetCFrame = CFrame.new(nextPos) * state.Orientation
-		-- Skip redundant writes so a still panel costs nothing per frame.
+		
 		if not lastCFrame or not lastCFrame:FuzzyEq(targetCFrame, 0.0005) then
 			lastCFrame = targetCFrame
 			panel.CFrame = targetCFrame
 		end
 
-		-- Open "pop" (scales the part, no GUI re-layout).
+		
 		if state.PopActive then
 			local t = (os.clock() - state.PopStart) / popTime
 			if t >= 1 then
@@ -8738,7 +8599,7 @@ function Hood3D.Mount(target, options)
 		end
 		table.clear(self.Connections)
 
-		-- Restore Scoot's window-drag (we disabled it while 3D was active).
+		
 		for _, connection in ipairs(disabledDragConnections) do
 			pcall(function()
 				connection:Enable()
