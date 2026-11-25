@@ -128,6 +128,9 @@ local Library do
     Library.Sections.__index = Library.Sections
     Library.Pages.__index = Library.Pages
 
+    Library.IsMobile = (getgenv().FM_MOBILE == true)
+        or (UserInputService.TouchEnabled == true and UserInputService.KeyboardEnabled == false)
+
     
     
     function Library:CloseDropdowns()
@@ -523,7 +526,7 @@ local Library do
             end)
 
             Library:Connect(UserInputService.InputChanged, function(Input)
-                if Input.UserInputType == Enum.UserInputType.MouseMovement and Resizing then
+                if (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) and Resizing then
 					ResizeMax = Maximum or Gui.Parent.AbsoluteSize - Gui.AbsoluteSize
 
 					Delta = Start + UDim2New(0, Input.Position.X, 0, Input.Position.Y)
@@ -731,8 +734,14 @@ local Library do
     end
 
     Library.Round = function(self, Number, Float)
-        local Multiplier = 1 / (Float or 1)
-        return MathFloor(Number * Multiplier) / Multiplier
+        Float = tonumber(Float)
+
+        if Float == nil or Float ~= Float or Float <= 0 then
+            return MathFloor(Number + 0.5)
+        end
+
+        local Multiplier = 1 / Float
+        return MathFloor(Number * Multiplier + 0.5) / Multiplier
     end
 
     Library.GetTransparencyPropertyFromItem = function(self, Item)
@@ -893,80 +902,352 @@ local Library do
         end
     end
 
-    Library.GetConfig = function(self)
-        local Config = { } 
+    Library.ConfigRules = {
+        Ignored = {
+            ThreeDUI = true,
+            SpotifyWidget = true,
+            ConfigString = true,
+        },
 
-        local Success, Result = Library:SafeCall(function()
-            for Index, Value in Library.Flags do 
-                if type(Value) == "table" and Value.Key then
-                    Config[Index] = {Key = tostring(Value.Key), Mode = Value.Mode}
-                elseif type(Value) == "table" and Value.Color then
-                    Config[Index] = {Color = "#" .. Value.HexValue, Alpha = Value.Alpha}
-                else
-                    Config[Index] = Value
+        ForceOff = {
+            AntiAimEnabled = true,
+            AntiGlueEnabled = true,
+            AntiKillEnabled = true,
+            AntiStompEnabled = true,
+            AntiVoidEnabled = true,
+            AutoBangEnabled = true,
+            AutoEatEnabled = true,
+            AutoFoodEnabled = true,
+            AutoSuicideEnabled = true,
+            AutokillEnabled = true,
+            AutoReloadEnabled = true,
+            AutoSwitchEnabled = true,
+            DamagePredictionEnabled = true,
+            FPLabFakePos = true,
+            FPLabResolver = true,
+            GunNoSpread = true,
+            KnifebotEnabled = true,
+            LegitAimEnabled = true,
+            MovementFlyEnabled = true,
+            MovementGravityEnabled = true,
+            MovementJumpEnabled = true,
+            MovementSpin = true,
+            MovementWalkEnabled = true,
+            MultitoolEnabled = true,
+            PingSpoofEnabled = true,
+            PrefireEnabled = true,
+            RagebotEnabled = true,
+            RapidFireEnabled = true,
+            SilentAimEnabled = true,
+            TrashTalkEnabled = true,
+            UndergroundAnim = true,
+            VoidEnabled = true,
+            WallbangEnabled = true,
+        },
+    }
+
+    Library.IsFinite = function(self, Value)
+        return type(Value) == "number" and Value == Value and Value ~= math.huge and Value ~= -math.huge
+    end
+
+    Library.SafeConfigName = function(self, Name)
+        Name = tostring(Name or "")
+        Name = Name:gsub("[^%w %-%_]", "")
+        Name = Name:gsub("%s+", " ")
+        Name = Name:gsub("^%s+", ""):gsub("%s+$", "")
+        return Name ~= "" and Name or nil
+    end
+
+    Library.Serialize = function(self)
+        local Out = { Version = 3, Flags = { } }
+        local Rules = self.ConfigRules
+
+        for Index, Value in Library.Flags do
+            if Rules.Ignored[Index] then
+                continue
+            end
+
+            local Kind = type(Value)
+
+            if Kind == "table" and Value.Key then
+                Out.Flags[Index] = { T = "key", Key = tostring(Value.Key or "Enum.KeyCode.None"), Mode = tostring(Value.Mode or "Toggle") }
+            elseif Kind == "table" and Value.Color then
+                Out.Flags[Index] = { T = "color", Color = "#" .. tostring(Value.HexValue), Alpha = tonumber(Value.Alpha) or 0 }
+            elseif Kind == "number" and self:IsFinite(Value) then
+                Out.Flags[Index] = { T = "num", V = Value }
+            elseif Kind == "boolean" then
+                Out.Flags[Index] = { T = "bool", V = Value }
+            elseif Kind == "string" then
+                Out.Flags[Index] = { T = "str", V = Value }
+            elseif Kind == "table" then
+                local List = { }
+                local Clean = true
+
+                for _, Item in ipairs(Value) do
+                    if type(Item) == "string" then
+                        List[#List + 1] = Item
+                    else
+                        Clean = false
+                        break
+                    end
+                end
+
+                if Clean and #List > 0 then
+                    Out.Flags[Index] = { T = "list", V = List }
                 end
             end
-        end)
+        end
 
-        return HttpService:JSONEncode(Config)
+        return Out
+    end
+
+    Library.NormalizeLegacy = function(self, Map)
+        if type(Map) ~= "table" then
+            return nil
+        end
+
+        local Out = { }
+        local Count = 0
+
+        for Index, Value in Map do
+            local Kind = type(Value)
+
+            if Kind == "table" and Value.Key then
+                Out[Index] = { T = "key", Key = tostring(Value.Key or "Enum.KeyCode.None"), Mode = tostring(Value.Mode or "Toggle") }
+                Count += 1
+            elseif Kind == "table" and Value.Color then
+                Out[Index] = { T = "color", Color = tostring(Value.Color), Alpha = tonumber(Value.Alpha) or 0 }
+                Count += 1
+            elseif Kind == "number" and self:IsFinite(Value) then
+                Out[Index] = { T = "num", V = Value }
+                Count += 1
+            elseif Kind == "boolean" then
+                Out[Index] = { T = "bool", V = Value }
+                Count += 1
+            elseif Kind == "string" then
+                Out[Index] = { T = "str", V = Value }
+                Count += 1
+            elseif Kind == "table" then
+                local List = { }
+
+                for _, Item in ipairs(Value) do
+                    if type(Item) == "string" then
+                        List[#List + 1] = Item
+                    end
+                end
+
+                Out[Index] = { T = "list", V = List }
+                Count += 1
+            end
+        end
+
+        return Count > 0 and Out or nil
+    end
+
+    Library.ApplyConfig = function(self, Saved)
+        local Flags = type(Saved) == "table" and Saved.Flags or nil
+
+        if not Flags then
+            Flags = self:NormalizeLegacy(Saved)
+        end
+
+        if not Flags then
+            return false, "not a valid config"
+        end
+
+        local Rules = self.ConfigRules
+        local Applied = 0
+
+        for Index, Entry in Flags do
+            if type(Entry) ~= "table" or not Entry.T then
+                continue
+            end
+
+            if Rules.Ignored[Index] then
+                continue
+            end
+
+            local Set = Library.SetFlags[Index]
+
+            if not Set then
+                continue
+            end
+
+            local Kind = Entry.T
+
+            if Rules.ForceOff[Index] then
+                if Kind == "bool" then
+                    Set(false)
+                    Applied += 1
+                end
+
+                continue
+            end
+
+            if Kind == "key" then
+                Set({ Key = tostring(Entry.Key or "Enum.KeyCode.None"), Mode = tostring(Entry.Mode or "Toggle") })
+                Applied += 1
+            elseif Kind == "color" then
+                local OkColor, Color = pcall(function()
+                    return Color3.fromHex(tostring(Entry.Color))
+                end)
+
+                if OkColor and Color then
+                    Set(Color, tonumber(Entry.Alpha) or 0)
+                    Applied += 1
+                end
+            elseif Kind == "num" then
+                local Number = tonumber(Entry.V)
+
+                if self:IsFinite(Number) then
+                    Set(Number)
+                    Applied += 1
+                end
+            elseif Kind == "bool" then
+                Set(Entry.V == true)
+                Applied += 1
+            elseif Kind == "str" then
+                Set(tostring(Entry.V))
+                Applied += 1
+            elseif Kind == "list" then
+                Set(Entry.V)
+                Applied += 1
+            end
+        end
+
+        return true, Applied
+    end
+
+    Library.GetConfig = function(self)
+        return HttpService:JSONEncode(self:Serialize())
     end
 
     Library.LoadConfig = function(self, Config)
-        if type(Config) == "table" then
-            Config = HttpService:JSONEncode(Config)
-        end
-
-        local Decoded = HttpService:JSONDecode(Config)
-
-        local Success, Result = Library:SafeCall(function()
-            for Index, Value in Decoded do 
-                local SetFunction = Library.SetFlags[Index]
-
-                if not SetFunction then
-                    continue
-                end
-
-                if type(Value) == "table" and Value.Key then 
-                    SetFunction(Value)
-                elseif type(Value) == "table" and Value.Color then
-                    SetFunction(Value.Color, Value.Alpha)
-                else
-                    SetFunction(Value)
-                end
+        local OkDecoded, Decoded = pcall(function()
+            if type(Config) == "table" then
+                return Config
             end
+
+            return HttpService:JSONDecode(tostring(Config or ""))
         end)
 
-        if Success then 
-            Library:Notification("Successfully loaded config", 5, Color3.fromRGB(0, 255, 0))
+        if not OkDecoded then
+            Library:Notification("Error", "Config is not valid JSON", 5, Color3.fromRGB(255, 90, 90))
+            return false, "invalid json"
         end
 
-        return Success, Result
+        local OkApply, Result = self:ApplyConfig(Decoded)
+
+        if OkApply then
+            Library:Notification("Successfully loaded config", 5, Color3.fromRGB(0, 255, 0))
+        else
+            Library:Notification("Error", tostring(Result), 5, Color3.fromRGB(255, 90, 90))
+        end
+
+        return OkApply, Result
+    end
+
+    Library.GetTheme = function(self)
+        local Saved = self:Serialize()
+        local Out = { Version = 3, Theme = true, Flags = { } }
+
+        for Index, Entry in Saved.Flags do
+            if Entry.T == "color" and Index:sub(1, 5) == "Theme" then
+                Out.Flags[Index] = Entry
+            end
+        end
+
+        return HttpService:JSONEncode(Out)
+    end
+
+    Library.LoadTheme = function(self, Config)
+        local OkDecoded, Decoded = pcall(function()
+            if type(Config) == "table" then
+                return Config
+            end
+
+            return HttpService:JSONDecode(tostring(Config or ""))
+        end)
+
+        if not OkDecoded or type(Decoded) ~= "table" or type(Decoded.Flags) ~= "table" then
+            Library:Notification("Error", "Theme file is not valid", 5, Color3.fromRGB(255, 90, 90))
+            return false, "invalid theme"
+        end
+
+        local Applied = 0
+
+        for Index, Entry in Decoded.Flags do
+            if type(Entry) == "table" and Entry.T == "color" and Index:sub(1, 5) == "Theme" then
+                local Set = Library.SetFlags[Index]
+
+                if Set then
+                    local OkColor, Color = pcall(function()
+                        return Color3.fromHex(tostring(Entry.Color))
+                    end)
+
+                    if OkColor and Color then
+                        Set(Color, tonumber(Entry.Alpha) or 0)
+                        Applied += 1
+                    end
+                end
+            end
+        end
+
+        local Done = Applied > 0
+
+        Library:Notification(Done and "Success" or "Error", Done and "Loaded theme" or "Theme has no colors", 5, Done and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 90, 90))
+
+        return Done, Applied
     end
 
     Library.DeleteConfig = function(self, Config)
-        local Path = Library.Folders.Configs .. "/" .. Config
+        local Name = self:SafeConfigName(Config)
 
-        if not isfile(Path) and isfile(Path .. ".json") then
-            Path = Path .. ".json"
+        if not Name then
+            return false
         end
 
-        if isfile(Path) then 
-            delfile(Path)
-            Library:Notification("Deleted config " .. Config, 5, Color3.fromRGB(0, 255, 0))
-        end
-    end
-
-    Library.SaveConfig = function(self, Config)
-        local Path = Library.Folders.Configs .. "/" .. Config
+        local Path = Library.Folders.Configs .. "/" .. Name
 
         if not isfile(Path) and isfile(Path .. ".json") then
             Path = Path .. ".json"
         end
 
         if isfile(Path) then
-            writefile(Path, Library:GetConfig())
-            Library:Notification("Saved config " .. Config, 5, Color3.fromRGB(0, 255, 0))
+            delfile(Path)
+            Library:Notification("Deleted config " .. Name, 5, Color3.fromRGB(0, 255, 0))
+            return true
         end
+
+        return false
+    end
+
+    Library.SaveConfig = function(self, Config)
+        local Name = self:SafeConfigName(Config)
+
+        if not Name then
+            return false
+        end
+
+        local Path = Library.Folders.Configs .. "/" .. Name
+
+        if not isfile(Path) and isfile(Path .. ".json") then
+            Path = Path .. ".json"
+        end
+
+        local OkWrite = pcall(function()
+            writefile(Path, self:GetConfig())
+        end)
+
+        local Saved = OkWrite and isfile(Path)
+
+        if Saved then
+            Library:Notification("Saved config " .. Name, 5, Color3.fromRGB(0, 255, 0))
+        else
+            Library:Notification("Error", "Failed saving config " .. Name, 5, Color3.fromRGB(255, 90, 90))
+        end
+
+        return Saved
     end
 
     Library.RefreshConfigsList = function(self, Element)
@@ -1939,7 +2220,7 @@ local Library do
         end)
 
         Items["Palette"]:Connect("InputEnded", function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 SlidingPalette = false
             end
         end)
@@ -1952,7 +2233,7 @@ local Library do
         end)
 
         Items["Hue"]:Connect("InputEnded", function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 SlidingHue = false
             end
         end)
@@ -1965,7 +2246,7 @@ local Library do
         end)
 
         Items["Alpha"]:Connect("InputEnded", function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 SlidingAlpha = false
             end
         end)
@@ -1975,7 +2256,7 @@ local Library do
                 return
             end
 
-            if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
                 if SlidingPalette then
                     Colorpicker:SlidePalette(Input)
                 end
@@ -2838,6 +3119,17 @@ local Library do
             IsOpen = true
         }
 
+        local baseWidth = Window.Size.X.Offset
+        local baseHeight = Window.Size.Y.Offset
+
+        if Library.IsMobile then
+            local viewport = Camera.ViewportSize
+            Window.Size = UDim2New(
+                0, math.min(baseWidth, math.floor(viewport.X * 0.92)),
+                0, math.min(baseHeight, math.floor(viewport.Y * 0.8))
+            )
+        end
+
         local Items = { } do 
             Items["MainFrame"] = Instances:Create("Frame", {
                 Parent = Library.Holder.Instance,
@@ -2856,6 +3148,16 @@ local Library do
 
             Items["MainFrame"]:MakeDraggable()
             Items["MainFrame"]:MakeResizeable(Vector2New(Window.Size.X.Offset, Window.Size.Y.Offset), Vector2New(9999, 9999))
+
+            if Library.IsMobile then
+                Library:Connect(Camera:GetPropertyChangedSignal("ViewportSize"), function()
+                    local viewport = Camera.ViewportSize
+                    Items["MainFrame"].Instance.Size = UDim2New(
+                        0, math.min(baseWidth, math.floor(viewport.X * 0.92)),
+                        0, math.min(baseHeight, math.floor(viewport.Y * 0.8))
+                    )
+                end)
+            end
 
             
             Items["AccentBorder"] = Instances:Create("UIStroke", {
@@ -4383,7 +4685,11 @@ local Library do
         end
 
         function Toggle:Set(Bool)
-            Toggle.Value = Bool or not Toggle.Value
+            if Bool == nil then
+                Bool = not Toggle.Value
+            end
+
+            Toggle.Value = Bool == true
 
             Library.Flags[Toggle.Flag] = Toggle.Value
 
@@ -4718,10 +5024,16 @@ local Library do
         end
 
         function Slider:Set(Value)
+            Value = tonumber(Value)
+
+            if Value == nil or Value ~= Value then
+                Value = Slider.Min
+            end
+
             Slider.Value = MathClamp(Library:Round(Value, Slider.Decimals), Slider.Min, Slider.Max)
 
             Library.Flags[Slider.Flag] = Slider.Value
-            
+
             if Slider.Compact then
                 Items["Text"].Instance.Text = `{Slider.Name}: {Slider.Value}{Slider.Suffix}`
             else
@@ -4730,7 +5042,7 @@ local Library do
 
             Items["Indicator"]:Tween(TweenInfo.new(0.17, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2New((Slider.Value - Slider.Min) / (Slider.Max - Slider.Min), 0, 1, 0)})
 
-            if Slider.Callback then 
+            if Slider.Callback then
                 Library:SafeCall(Slider.Callback, Slider.Value)
             end
         end
@@ -4746,25 +5058,35 @@ local Library do
         Items["RealSlider"]:Connect("MouseButton1Down", function()
             Slider.Sliding = true
 
-            local MousePos = UserInputService:GetMouseLocation()
+            local absPos = Items["RealSlider"].Instance.AbsolutePosition
+            local absSize = Items["RealSlider"].Instance.AbsoluteSize
 
-            local SizeX = (MousePos.X - Items["RealSlider"].Instance.AbsolutePosition.X) / Items["RealSlider"].Instance.AbsoluteSize.X
+            if absSize.X <= 0 then
+                return
+            end
+
+            local SizeX = math.clamp((UserInputService:GetMouseLocation().X - absPos.X) / absSize.X, 0, 1)
             local Value = ((Slider.Max - Slider.Min) * SizeX) + Slider.Min
 
             Slider:Set(Value)
         end)
 
         Items["RealSlider"]:Connect("InputEnded", function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 Slider.Sliding = false
             end
         end)
 
         Library:Connect(UserInputService.InputChanged, function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseMovement and Slider.Sliding then
-                local MousePos = UserInputService:GetMouseLocation()
+            if (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) and Slider.Sliding then
+                local absPos = Items["RealSlider"].Instance.AbsolutePosition
+                local absSize = Items["RealSlider"].Instance.AbsoluteSize
 
-                local SizeX = (MousePos.X - Items["RealSlider"].Instance.AbsolutePosition.X) / Items["RealSlider"].Instance.AbsoluteSize.X
+                if absSize.X <= 0 then
+                    return
+                end
+
+                local SizeX = math.clamp((UserInputService:GetMouseLocation().X - absPos.X) / absSize.X, 0, 1)
                 local Value = ((Slider.Max - Slider.Min) * SizeX) + Slider.Min
 
                 Slider:Set(Value)
@@ -5069,27 +5391,36 @@ local Library do
         end
 
         function Dropdown:Set(Option)
-            if Dropdown.Multi then 
-                if type(Option) ~= "table" then 
-                    return
-                end
+            if Dropdown.Multi then
+                local Wanted = { }
+                local Labels = { }
 
-                Dropdown.Value = Option
-
-                for Index, Value in Option do 
-                    local OptionData = Dropdown.Options[Value]
-                    
-                    if not OptionData then 
-                        return
+                if type(Option) == "table" then
+                    for _, Name in ipairs(Option) do
+                        if type(Name) == "string" and Dropdown.Options[Name] and not Wanted[Name] then
+                            Wanted[Name] = true
+                            Labels[#Labels + 1] = Name
+                        end
                     end
-
-                    OptionData.Selected = true
-                    OptionData:Toggle("Active")
+                elseif type(Option) == "string" and Dropdown.Options[Option] then
+                    Wanted[Option] = true
+                    Labels[1] = Option
                 end
 
-                Library.Flags[Dropdown.Flag] = Dropdown.Value
+                for Name, OptionData in Dropdown.Options do
+                    if Wanted[Name] then
+                        OptionData.Selected = true
+                        OptionData:Toggle("Active")
+                    else
+                        OptionData.Selected = false
+                        OptionData:Toggle("Inactive")
+                    end
+                end
 
-                Items["Value"].Instance.Text = TableConcat(Option, ", ")
+                Dropdown.Value = Labels
+                Library.Flags[Dropdown.Flag] = Labels
+
+                Items["Value"].Instance.Text = #Labels > 0 and TableConcat(Labels, ", ") or "--"
             else
                 if not Dropdown.Options[Option] then 
                     return
@@ -5114,8 +5445,8 @@ local Library do
                 Items["Value"].Instance.Text = Option
             end
 
-            if Dropdown.Callback then 
-                Library:SafeCall(Dropdown.Callback, Option)
+            if Dropdown.Callback then
+                Library:SafeCall(Dropdown.Callback, Dropdown.Multi and Dropdown.Value or Option)
             end
         end
 
@@ -5250,11 +5581,15 @@ local Library do
         end
 
         function Dropdown:Refresh(List)
-            for Index, Value in Dropdown.Options do 
+            for Index, Value in Dropdown.Options do
                 Dropdown:Remove(Value.Name)
             end
 
-            for Index, Value in List do 
+            Dropdown.Value = Dropdown.Multi and { } or nil
+            Library.Flags[Dropdown.Flag] = Dropdown.Multi and { } or nil
+            Items["Value"].Instance.Text = "--"
+
+            for Index, Value in List do
                 Dropdown:Add(Value)
             end
         end
@@ -5983,6 +6318,10 @@ local Library do
                     pcall(Library.Apply3D)
                 end
 
+                if getgenv().__hoodMenuFxSyncBlur then
+                    pcall(getgenv().__hoodMenuFxSyncBlur)
+                end
+
                 return Result
             end
 
@@ -6067,10 +6406,20 @@ local Library do
         local ThemeButtons = ThemesSection:Button()
 
         ThemeButtons:Add("Save", function()
-            if ThemeName ~= "" then
-                writefile(Library.Folders.Themes .. "/" .. ThemeName .. ".json", Library:GetConfig())
+            local Name = Library:SafeConfigName(ThemeName)
+
+            if Name then
+                local OkWrite = pcall(function()
+                    writefile(Library.Folders.Themes .. "/" .. Name .. ".json", Library:GetTheme())
+                end)
+
                 Library:RefreshThemesList(ThemesSearchbox)
-                Library:Notification("Success", "Saved theme " .. ThemeName, 4)
+
+                if OkWrite and isfile(Library.Folders.Themes .. "/" .. Name .. ".json") then
+                    Library:Notification("Success", "Saved theme " .. Name, 4, Color3.fromRGB(0, 255, 0))
+                else
+                    Library:Notification("Error", "Failed saving theme " .. Name, 4, Color3.fromRGB(255, 90, 90))
+                end
             end
         end)
 
@@ -6083,8 +6432,10 @@ local Library do
                 end
 
                 if isfile(Path) then
-                    local Success, Result = Library:LoadConfig(readfile(Path))
-                    Library:Notification(Success and "Success" or "Error", Success and ("Loaded theme " .. ThemeSelected) or tostring(Result), 4)
+                    local Success, Result = Library:LoadTheme(readfile(Path))
+                    if not Success then
+                        Library:Notification("Error", tostring(Result), 4, Color3.fromRGB(255, 90, 90))
+                    end
                 end
             end
         end)
@@ -6141,13 +6492,15 @@ local Library do
         local ConfigButtons = ConfigsSection:Button()
 
         ConfigButtons:Add("Create", function()
-            if ConfigName ~= "" then
-                if not isfile(Library.Folders.Configs .. "/" .. ConfigName .. ".json") then
-                    writefile(Library.Folders.Configs .. "/" .. ConfigName .. ".json", Library:GetConfig())
+            local Name = Library:SafeConfigName(ConfigName)
+
+            if Name then
+                if not isfile(Library.Folders.Configs .. "/" .. Name .. ".json") then
+                    writefile(Library.Folders.Configs .. "/" .. Name .. ".json", Library:GetConfig())
                     Library:RefreshConfigsList(ConfigsSearchbox)
-                    Library:Notification("Success", "Created config " .. ConfigName, 4)
+                    Library:Notification("Success", "Created config " .. Name, 4, Color3.fromRGB(0, 255, 0))
                 else
-                    Library:Notification("Error", "Config with that name already exists", 4)
+                    Library:Notification("Error", "Config with that name already exists", 4, Color3.fromRGB(255, 90, 90))
                 end
             end
         end)
@@ -6169,25 +6522,71 @@ local Library do
 
                 if isfile(Path) then
                     local Success, Result = Library:LoadConfig(readfile(Path))
-                    Library:Notification(Success and "Success" or "Error", Success and ("Loaded config " .. ConfigSelected) or tostring(Result), 4)
+                    if not Success then
+                        Library:Notification("Error", tostring(Result), 4, Color3.fromRGB(255, 90, 90))
+                    end
                 end
             end
         end)
 
         ConfigButtons:Add("Save", function()
             if ConfigSelected then
-                local Path = Library.Folders.Configs .. "/" .. ConfigSelected
-
-                if not isfile(Path) and isfile(Path .. ".json") then
-                    Path = Path .. ".json"
-                end
-
-                if isfile(Path) then
-                    writefile(Path, Library:GetConfig())
-                end
-
-                Library:Notification("Success", "Saved config " .. ConfigSelected, 4)
+                Library:SaveConfig(ConfigSelected)
+                Library:RefreshConfigsList(ConfigsSearchbox)
             end
+        end)
+
+        local ConfigString = ConfigsSection:Textbox({
+            Name = "Config string",
+            Flag = "ConfigString",
+            Default = "",
+            Placeholder = "paste raw config json",
+        })
+
+        ConfigButtons:Add("Save string", function()
+            local Raw = ConfigString:Get()
+            local Name = Library:SafeConfigName(ConfigName)
+
+            if not Name then
+                Library:Notification("Error", "Enter a config name first", 4, Color3.fromRGB(255, 90, 90))
+                return
+            end
+
+            if type(Raw) ~= "string" or Raw == "" then
+                Library:Notification("Error", "Paste a config string first", 4, Color3.fromRGB(255, 90, 90))
+                return
+            end
+
+            local OkDecode, Decoded = pcall(function()
+                return HttpService:JSONDecode(Raw)
+            end)
+
+            if not OkDecode or type(Decoded) ~= "table" then
+                Library:Notification("Error", "That string is not valid config JSON", 4, Color3.fromRGB(255, 90, 90))
+                return
+            end
+
+            local Path = Library.Folders.Configs .. "/" .. Name .. ".json"
+            local OkWrite = pcall(function()
+                writefile(Path, Raw)
+            end)
+
+            if OkWrite and isfile(Path) then
+                Library:RefreshConfigsList(ConfigsSearchbox)
+                Library:Notification("Success", "Saved config " .. Name, 4, Color3.fromRGB(0, 255, 0))
+            else
+                Library:Notification("Error", "Failed saving config " .. Name, 4, Color3.fromRGB(255, 90, 90))
+            end
+        end)
+
+        ConfigButtons:Add("Copy", function()
+            if type(setclipboard) ~= "function" then
+                Library:Notification("Error", "Clipboard not supported on this executor", 4, Color3.fromRGB(255, 90, 90))
+                return
+            end
+
+            pcall(setclipboard, Library:GetConfig())
+            Library:Notification("Success", "Config copied as JSON", 4, Color3.fromRGB(0, 255, 0))
         end)
 
         ConfigButtons:Add("Refresh", function()
@@ -9172,7 +9571,7 @@ function Hood3D.Mount(target, options)
 	end))
 
 	table.insert(state.Connections, UserInputService.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement then
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 			if not drag.active then
 				return
 			end
